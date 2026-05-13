@@ -22,7 +22,9 @@ Agentis는 "에이전트를 만드는 에이전트 환경"입니다. 동료가 �
 경로 B) cline SR 워크스페이스 룰에 seed/ 의 파일 1개만 넣고 → "안녕"
 ```
 
-> ⚠️ 아직 설계/구현 단계입니다. 자세한 계획은 [`PLAN.md`](./PLAN.md) 참고.
+> ⚠️ 아직 설계/구현 단계입니다. 자세한 계획은 [`PLAN.md`](./PLAN.md) 참고 (현재 v0.4).
+
+**v1.0 핵심**: ① Cline 룰(md 파일) 기반으로 동작 — superpowers처럼 ② Cline 메모리뱅크를 Hermes식 자가확장 + LLM-위키 방식으로 진화시켜 "두뇌"로 ③ graphify로 Obsidian처럼 그래프화 → 지식 쌓이는 게 눈에 보이게. (목표 그래프 스타일: [`docs/ref-graph-style.png`](./docs/ref-graph-style.png))
 
 ## 레포 구조 (계획)
 
@@ -46,4 +48,4 @@ Agentis는 "에이전트를 만드는 에이전트 환경"입니다. 동료가 �
 
 ## 상태
 
-설계 중 (Phase 0). cline SR 환경 제약 실측 → The Seed v1 작성 순서. 진행 상황은 `PLAN.md` 참고.
+설계 중. Phase 0(레포·레퍼런스 셋업) 완료 → 다음은 The Seed v1 초안. cline SR 환경 실측은 추후, v1.0은 표준 Cline 가정으로 진행. 진행 상황은 `PLAN.md` 참고.
