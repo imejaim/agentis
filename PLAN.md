@@ -1,9 +1,9 @@
-# Agentis — 기획서 (v0.6)
+# Agentis — 기획서 (v0.8)
 
-> 작성: 코부장 / 2026-05-13. 5차 피드백 반영(`agentis/` 폴더는 보이게, 부팅흐름·결정론 강도·한국어 확정 → **v1.0 일차 구현 완료**, 대표님 시험 대기).
+> 작성: 코부장 / 2026-05-13 ~ 14 야간. 7차 피드백 반영(**RPG 능력치 시트** 자동 산출 + **에이전티스 세상 비전**(자연발생적 도메인 종 분기) 별도 문서로 기록).
 > 진행 중 문서 — "조금씩 더 살펴보면서 추가하고 다듬자" 기조.
 > 코드 레퍼런스: `reference/` 폴더에 원본 레포 클론됨(깃이그노어). 그래프 스타일 레퍼런스: `docs/ref-graph-style.png`.
-> ▶ **써보는 법은 레포의 `README.md` 와 `seed/README.md`** 참고. 예제는 `examples/spec-doc-checker/`.
+> ▶ **써보는 법은 레포의 `README.md` 와 `seed/README.md`**. 예제는 `examples/spec-doc-checker/` + 예제 브랜치 `examples/spec-doc-checker/규격이-브랜치-2026-05-13/`.
 
 ---
 
@@ -119,8 +119,11 @@ v1.0 = "표준 Cline 위에서, **md(설명·규약) + Python(실행·결정론)
 ## 7. 단계 (phased)
 
 - **Phase 0** ✅ — GitHub `imejaim/agentis` 생성·public·푸시, `reference/` 5개 클론, 그래프 레퍼런스 이미지 확보.
-- **Phase 1 (v1.0 MVP)** ✅ 일차 완성 — ① The Seed v1 (`seed/agentis.md`: 부트스트랩 + clarify 인터뷰 + 자가셋업 + 작업 루프 + 결정론 우선 + 기억 갱신 + 스킬 자가제안 + 그래프) ② 메모리뱅크=살아있는 LLM-위키 스캐폴드 + 운영 규약 (`kit/agentis-template/memory/`) ③ 그래프 빌더 `build_graph.py` (자체완결형 HTML, 외부 의존 0) ④ 결정론 처리: 스킬/워크플로우 = `md + py`, 검증 단계 포함 ⑤ 예제 에이전트 "규격이" (`examples/spec-doc-checker/`) — 실제로 돌아가는 `run.py` 2종 + 샘플 데이터 + 채워진 메모리/그래프. → **다음: 대표님이 cline SR(또는 일반 Cline)에서 `seed/agentis.md` 넣고 "안녕" 해보고 피드백.**
-- **Phase 2** — 사내 검증 피드백 반영, 컨셉·도입 안내 문서(`docs/`), 스킬 라이브러리 확충, 메모리 위키 lint(Python), 경로 A("이 폴더 보고 셋업해줘") 다듬기.
+- **Phase 1 (v1.0 MVP)** ✅ — 씨드 + 키트 + 그래프 빌더 + 예제 에이전트. 모든 스크립트 실행 검증.
+- **Phase 1 시험** ✅ (2026-05-13) — **씨드 한 파일만으로 cline SR 환경에서 부팅(인터뷰→자가셋업) 검증됨.** 키트 없이도 충분. 키트는 "옵션 사치"로 격하.
+- **Phase 1.1 (v1.1 — 공유와 진화)** ✅ — ① 씨드 §5 "공유와 진화 — 브랜치 / 팩 / 메인", 이름 불변식, §0 작업폴더 상태 감지 분기 ② 4종 워크플로우(`브랜치-내보내기` / `팩-병합` / `브랜치-비교` / `메인-동기화`), 모두 결정론 Python + md 짝 ③ 예제 브랜치 폴더 생성·검증.
+- **Phase 1.2 (v1.2 — 능력치 / 자가 가시화)** ✅ — RPG 캐릭터 시트 자동 산출 (`agent-stats.py`): Level·XP·Speed·INT·Variety·Stamina·Wisdom + 감지된 도메인 유전자(상위 태그). `agentis/memory/stats.md` 로 저장 → 그래프에도 노드로 자동 편입. 메인 후보 1차 판단의 객관 지표 + 사용자 동기부여 + (다음 단계) 자연발생적 도메인 분류의 입력 데이터. 씨드 §3-6 에 갱신 절차 박음. → **다음: 실제 브랜치 송수신·리브랜드 한 사이클 + 메인 첫 운영 시나리오.**
+- **Phase 2** — 사내 검증 피드백 반영, 컨셉·도입 안내 문서(`docs/`), 스킬 라이브러리 확충, 메모리 위키 lint(Python), 사내 깃 메인 첫 운영(관리자 절차 정의).
 - **Phase 3** — Hermes식 학습 루프 본격화(스킬 자동생성·개선·nudge·과거대화 검색), graphify 본체 연동(의미관계·커뮤니티·신노드 강조), cline SR 환경 실측 후 사내 맞춤.
 - **Phase 4** — 사내 확산: 동료별 파일럿(규격인증/디버깅/…) + 피드백 반영.
 
@@ -158,13 +161,17 @@ v1.0 = "표준 Cline 위에서, **md(설명·규약) + Python(실행·결정론)
 
 ## 11. 코부장 진행 현황 / 다음
 
-1. ✅ public, `docs/ref-graph-style.png`, PLAN v0.6.
-2. ✅ The Seed v1 — `seed/agentis.md` (`.clinerules` 로 넣는 부트스트랩 커널) + `seed/README.md`.
-3. ✅ The Kit v1 — `kit/agentis-template/` (agent 템플릿 / memory 스캐폴드+운영규약 / skills·workflows 포맷 / `build_graph.py`).
-4. ✅ 그래프 빌더 — `build_graph.py`: memory·skills·workflows 의 `[[링크]]` → `graph.json` + 자체완결형 `graph.html`. 표준 라이브러리만, 외부 의존 0. (테스트 통과)
-5. ✅ 예제 에이전트 "규격이" — `examples/spec-doc-checker/`: 채워진 `agentis/`(정체성·메모리 9페이지·스킬·워크플로우·그래프) + 동작하는 `run.py` 2종(체크리스트 대조 / 시험성적서 항목추출, 검증 단계 포함) + 샘플 데이터. (3개 스크립트 다 실행 확인: 검증 OK, 누락/`??` 정상 탐지)
-6. ⏭️ **대표님 시험** — cline SR(또는 일반 Cline)에서 `seed/agentis.md` 를 `.clinerules` 로 넣고 "안녕" → 인터뷰·자가셋업·작업·그래프 흐름이 그 환경에서 도는지 확인 → 피드백.
-7. ⏭️ (피드백 후) Phase 2: 안 되는 부분 보강, 컨셉/도입 문서, lint, 스킬 라이브러리.
+1. ✅ public, `docs/ref-graph-style.png`, PLAN v0.6/v0.7.
+2. ✅ The Seed v1.1 — `seed/agentis.md` (부트스트랩 + §5 공유와 진화 + 이름 불변식 + §3-6 능력치 갱신).
+3. ✅ The Kit v1 — agent 템플릿 / memory 스캐폴드+운영규약 / skills·workflows 포맷 / `build_graph.py`.
+4. ✅ 그래프 빌더 — `build_graph.py` (자체완결형 HTML, 외부 의존 0).
+5. ✅ 예제 에이전트 "규격이" — 채워진 `agentis/` + 동작하는 `run.py` 2종 + 샘플 데이터.
+6. ✅ **씨드 검증** (2026-05-13) — 사용자 cline SR 환경에서 씨드만으로 부팅·셋업 완료 확인. 키트는 "옵션 사치"로 격하.
+7. ✅ **v1.1 공유와 진화** — 4종 워크플로우(브랜치-내보내기·팩-병합·브랜치-비교·메인-동기화) + 예제 브랜치 폴더(`규격이-브랜치-2026-05-14/`).
+8. ✅ **v1.2 능력치** — `agent-stats.py` (Level/XP/Speed/INT/Variety/Stamina/Wisdom + 도메인 유전자 태그 집계) + `memory/stats.md` 자동 생성. 예제: 규격이 Level 7, XP 800, Speed 6, INT 38, 7일째.
+9. ✅ **에이전티스 세상 비전 기록** — `docs/vision-agentis-world.md` — 사용자가 만든 메인들이 누적되면 자연발생적으로 도메인 종(species)이 분기되는 그림. 지금 구현 X, 방향 박음.
+10. ⏭️ **사용자 실전** — 동료 한 명과 브랜치 송수신·리브랜드 한 사이클 → 피드백.
+11. ⏭️ (피드백 후) Phase 2: 사내 깃 메인 첫 운영 절차, 컨셉/도입 문서, lint, 스킬 라이브러리 확충.
 
 ---
 
@@ -181,6 +188,29 @@ v1.0 = "표준 Cline 위에서, **md(설명·규약) + Python(실행·결정론)
 2. 위 1~2번(`seed/agentis.md` → `.clinerules`, "안녕")은 동일. 에이전트가 빈 템플릿을 인터뷰 결과로 채운다.
 
 **먼저 구경만 (예제):**
-- `examples/spec-doc-checker/` 폴더로 가서 `python agentis/graph/build_graph.py --open` → "규격이"의 두뇌 그래프가 뜸. `agentis/agent.md`, `agentis/memory/*` 보면 며칠 일한 에이전트가 어떤 모습인지 알 수 있음. `agentis/skills/checklist-대조/run.py`, `agentis/workflows/시험성적서-항목추출.py` 는 샘플 데이터로 바로 돌려볼 수 있음 (README 참고).
+- `examples/spec-doc-checker/` 폴더로 가서:
+  - `python agentis/graph/build_graph.py --open` → 규격이의 두뇌 그래프
+  - `python agentis/graph/agent-stats.py` → **RPG 캐릭터 시트** (Level/XP/Speed/INT/Variety/Stamina/Wisdom + 감지된 도메인 유전자)
+  - `agentis/agent.md`, `agentis/memory/*`, `agentis/memory/stats.md` 둘러보기
+  - `python agentis/skills/checklist-대조/run.py ...` / `시험성적서-항목추출.py` (샘플 데이터로)
+  - 브랜치 폴더 `규격이-브랜치-2026-05-14/` 안의 `BRANCH.md` 보면 송신 직전 상태가 어떤 모습인지 확인 가능
+
+**공유해보고 싶으면:** README "에이전트 공유 — 씨드 → 브랜치 → 메인" 절 참고.
 
 > 막히면 알려주세요 — cline SR이 룰/워크플로우 중 뭘 못 먹는지 보이면 거기 맞춰 씨앗을 고칩니다.
+
+---
+
+## 13. 용어·결정 (확정)
+
+- **트리 메타포 = git 메타포**: 씨드(seed) → 브랜치(branch) → 메인(main).
+- **사람 예시 이름**: 앨리스(=알리스) / 밥. (봅 X)
+- **이름 불변식**: 사용자가 지어준 이름이 진짜 이름. 문서·예시·로그 어디서든 그 이름. (씨드 §0 위 헤더에 박음.)
+- **메인 활성 조건**: `agent.md` 의 `main_repo:` 필드 값이 있을 때만. 없으면 메인 개념 자체 비활성.
+- **브랜치 자동 제외 정책**: 사용자 본인 정보 only (agent.md REDACT + 본인 엔티티 페이지 + `share: private` 태그). 그 외(메모리·소스·로그·hot)는 기본 포함 — 받는 사람이 학습 자료로 쓸 수 있게. 추가 제외는 인터뷰로 사용자가 지정. 사람 검토(BRANCH.md)가 마지막 게이트.
+- **능력치(Character Sheet)**: 게임 캐릭터처럼 진화 가시화 + 메인 후보 1차 판단. 결정론으로 파일에서만 산출 (agent.md/log.md/skills/workflows/memory/graph). 토큰·시간은 로그 항목에 `tokens: N` / `sec: T` 한 줄로 적으면 자동 합산.
+- **에이전티스 = 도구 → 표준 공유 체계 → 세상**: 비전 단계별. 자세한 건 [`docs/vision-agentis-world.md`](./docs/vision-agentis-world.md). 자동 분류 + 자연발생적 도메인 종 분기가 v3+ 의 그림.
+
+---
+
+*— 코부장 / v0.8. 다음 마디는 사내에서 한 사이클 굴려본 뒤.*

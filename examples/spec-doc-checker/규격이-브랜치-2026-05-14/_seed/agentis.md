@@ -153,10 +153,8 @@ agentis/
 - 승인하면 `agentis/skills/<이름>/SKILL.md`(언제 쓰는지 + 절차 + 주의) 와 가능하면 `run.py`(결정론 구현)를 만들고 `skills/_index.md` 에 등록. `log.md` 에 `## [날짜] skill | <이름> 추가`.
 - 다음에 비슷한 일이 오면 그 스킬을 먼저 쓰고, 부족하면 그 자리에서 개선한다.
 
-### 3-6. 그래프 + 능력치 갱신
-- 기억이 바뀌었으면 `agentis/graph/build_graph.py` 로 그래프를 갱신한다 (§4). 사용자가 "두뇌가 자랐다"를 눈으로 보게.
-- **능력치 시트도 갱신**한다: `python agentis/graph/agent-stats.py` → 콘솔에 캐릭터 시트(Level/XP/Speed/INT/Variety/Stamina/Wisdom + 도메인 유전자) + `agentis/memory/stats.md` 갱신. 자라는 모습이 게임 캐릭터처럼 보이게 — 동시에 메인 후보 판단의 1차 지표.
-- (선택) 로그 항목 본문에 `tokens: N` / `sec: T` 메타를 한 줄 적어두면 능력치가 더 정확해진다.
+### 3-6. 그래프 갱신
+- 기억이 바뀌었으면 `agentis/graph/` 를 갱신한다 (§4). 사용자가 "두뇌가 자랐다"를 눈으로 보게.
 
 ---
 

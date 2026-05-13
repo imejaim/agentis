@@ -21,3 +21,12 @@ workflows/
 3. 실행: `python agentis/workflows/<업무이름>.py --in <입력경로> --out <출력경로>` → 산출물 + 검증결과 확인.
 4. 끝나면 `memory/log.md` 에 기록, 알게 된 건 `memory/concepts|entities|sources` 에 반영.
 5. 같은 업무가 또 오면 → 이 워크플로우를 따른다. 굳어졌으면 사용자에게 "스킬로 올릴까요?" 제안.
+
+## 기본 동봉 워크플로우 (공유와 진화 — §5 in seed)
+
+| 파일 | 무엇 |
+|---|---|
+| [브랜치-내보내기](브랜치-내보내기.workflow.md) + `.py` | 이 에이전트를 다른 사용자에게 넘길 브랜치 폴더로 묶기 (자동 제외: 사용자 본인 정보 / 본인 엔티티 / `share:private`) |
+| [팩-병합](팩-병합.workflow.md) + `.py` | 다른 사람 브랜치의 pack 만 내 에이전트에 합치기 (agent.md·sources·log·hot·entities·overview·_index 안 건드림) |
+| [브랜치-비교](브랜치-비교.workflow.md) + `.py` | 두 에이전트/브랜치의 스킬·워크플로우·개념 디프 보고서 (메인 큐레이션용) |
+| [메인-동기화](메인-동기화.workflow.md) + `.py` | `agent.md` 의 `main_repo:` 가 설정된 경우, 사내 메인 레포와 pull/push-prep/check |

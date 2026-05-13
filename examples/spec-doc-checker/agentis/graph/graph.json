@@ -412,6 +412,12 @@
       "label": "(소스) 2026-05-10 인증기관 제출문서 목록 v2"
     },
     {
+      "category": "_other",
+      "deg": 0,
+      "id": "memory/stats",
+      "label": "🧬 규격이 — Character Sheet"
+    },
+    {
       "category": "skills",
       "deg": 9,
       "id": "skills/checklist-대조",
@@ -419,23 +425,48 @@
     },
     {
       "category": "workflows",
+      "deg": 0,
+      "id": "workflows/메인-동기화",
+      "label": "메인 동기화"
+    },
+    {
+      "category": "workflows",
+      "deg": 0,
+      "id": "workflows/브랜치-내보내기",
+      "label": "브랜치 내보내기"
+    },
+    {
+      "category": "workflows",
+      "deg": 0,
+      "id": "workflows/브랜치-비교",
+      "label": "브랜치 비교"
+    },
+    {
+      "category": "workflows",
       "deg": 6,
       "id": "workflows/시험성적서-항목추출",
       "label": "시험성적서 항목 추출 워크플로우"
+    },
+    {
+      "category": "workflows",
+      "deg": 0,
+      "id": "workflows/팩-병합",
+      "label": "팩 병합 (다른 에이전트의 역량만 가져오기)"
     }
   ],
   "stats": {
     "broken_links": 0,
     "by_category": {
+      "_other": 1,
       "concepts": 3,
       "core": 5,
       "entities": 3,
       "skills": 1,
       "sources": 2,
-      "workflows": 1
+      "workflows": 5
     },
     "edges": 75,
-    "nodes": 15,
-    "orphans": 0
+    "nodes": 20,
+    "orphans": 5
   }
 }

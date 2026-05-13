@@ -66,6 +66,62 @@ Agentis는 "에이전트를 만드는 에이전트 환경"입니다. 동료가 �
 - [Karpathy — LLM Wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) — LLM이 직접 유지보수하는 지식베이스
 - [지식 그래프 실사용기 (brunch)](https://brunch.co.kr/@abrahamsong/164)
 
+## 에이전트 공유 — 씨드 → 브랜치 → 메인
+
+잘 키운 에이전트를 동료에게 넘기거나, 사내 메인으로 표준화하는 방법. (Git 메타포 그대로.)
+
+- **씨드(seed)** — 모든 에이전트의 출발점. `seed/agentis.md` 한 파일.
+- **브랜치(branch)** — 진화된 에이전트의 송신용 사본. 자동으로 ① 사용자 본인 식별 정보 ② 본인의 사용자 엔티티 페이지 ③ `share: private` 태그된 페이지를 빼고 묶어줌. 사용자가 추가로 빼고 싶은 것은 짧은 인터뷰로 확인.
+- **메인(main)** — `agent.md` 에 `main_repo:` (사내 깃 레포 URL) 가 설정되었을 때만 활성화. 사내 표준 에이전트. pull/push-prep/check 가능.
+
+만들고 받는 법:
+
+```bash
+# (A) 잘 키운 에이전트를 가진 사람: 에이전트에게 "브랜치 만들어줘" → 내부적으로:
+python agentis/workflows/브랜치-내보내기.py
+# → 작업폴더 옆에 <에이전트이름>-브랜치-YYYY-MM-DD/ 폴더 생성 (BRANCH.md + _seed/ + fork/ + pack/)
+
+# (B) 처음 받는 사람: 그 폴더를 자기 작업 폴더에 두고 Cline 대화창에 "안녕"
+# → 씨드가 자동 감지 → 리브랜드 미니 인터뷰 (이름·환경 다듬기)
+
+# (B') 이미 자기 에이전트가 있고 역량만 가져오고 싶은 사람:
+python agentis/workflows/팩-병합.py --pack <받은폴더>/pack --strategy plan-only   # 충돌 미리보기
+python agentis/workflows/팩-병합.py --pack <받은폴더>/pack --strategy rename-incoming  # 결정 반영
+
+# (관리자) 여러 사람 브랜치 비교 → 메인 큐레이션:
+python agentis/workflows/브랜치-비교.py <A 브랜치> <B 브랜치> --out 비교결과.md
+```
+
+용어 안내: 사용자가 "내보내기 / 분신 / 사본 / 복사본 만들어줘" 라고 해도 에이전트는 **"브랜치 만들기"** 로 통일 안내합니다. 사람 이름 예시는 **앨리스(또는 알리스) / 밥**.
+
+자세한 흐름: 씨드(`seed/agentis.md`) §5 — "공유와 진화 — 브랜치 / 팩 / 메인".
+
+## 능력치 — 진화가 눈에 보이게 (v1.2)
+
+게임 캐릭터처럼 에이전트의 성장이 보입니다. 한 줄로 갱신:
+
+```bash
+python agentis/graph/agent-stats.py
+```
+
+출력 (예제 "규격이"):
+```
+ 🧬  규격이 — Agentis Character Sheet
+  Level: 7      XP: 800      생일: 2026-05-07 (7일째)
+  ⚡ Speed     6   (스킬+워크플로우)
+  🧠 INT      38   (기억·연결성)
+  🎨 Variety  13   (작업·태그 다양성)
+  💪 Stamina   7   (생존일수)
+  🦉 Wisdom    0   (정비·추상화)
+  🧬 감지된 도메인 유전자: 시험성적서 ×3 / 인증 ×2 / kc ×2 / rohs / 추출 / 스키마 / 대조 / 검증
+```
+
+같은 내용이 `agentis/memory/stats.md` 로도 저장되어 그래프에도 노드로 편입됩니다. **메인 후보 1차 판단**의 객관 지표이자 사용자 동기부여, 나아가 자연발생적 도메인 분류의 기초 데이터가 됩니다.
+
+## 비전 — 에이전티스라는 세상
+
+도구(v1.x) → 사내 표준 공유 체계(v2~3) → **에이전트들의 세상**(v4~). 누적된 능력치에서 자연발생적으로 도메인 "종(species)"이 분기되는 그림. 자세한 비전은 [`docs/vision-agentis-world.md`](./docs/vision-agentis-world.md).
+
 ## 상태
 
-**v1.0 일차 구현 완료** — 씨앗(`seed/agentis.md`) · 키트(`kit/agentis-template/`) · 그래프 빌더(`build_graph.py`, 테스트 통과) · 예제 에이전트(`examples/spec-doc-checker/`, 스크립트 동작 확인). 다음: cline SR 환경에서 실제로 돌려보고 보강. 진행 상황은 [`PLAN.md`](./PLAN.md).
+**v1.2 구현 완료** — 씨드(공유와 진화 §5 + 이름 불변식 + 능력치 갱신) · 키트 + 4종 공유 워크플로우(브랜치-내보내기 / 팩-병합 / 브랜치-비교 / 메인-동기화) · 그래프 빌더 · **능력치 산출기**(`agent-stats.py`) · 예제 에이전트 + 예제 브랜치 폴더(`examples/spec-doc-checker/규격이-브랜치-2026-05-14/`) + 비전 문서. 모든 스크립트 실행 테스트 통과. 다음: 실제 사내 한 사이클(브랜치 송수신·리브랜드) 피드백. 진행: [`PLAN.md`](./PLAN.md).
