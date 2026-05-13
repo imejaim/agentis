@@ -1,0 +1,441 @@
+{
+  "broken": [],
+  "categories": {
+    "_other": {
+      "color": "#888888",
+      "label": "OTHER"
+    },
+    "concepts": {
+      "color": "#f0b860",
+      "label": "CONCEPTS"
+    },
+    "core": {
+      "color": "#7fd1ff",
+      "label": "CORE"
+    },
+    "entities": {
+      "color": "#9b8cff",
+      "label": "ENTITIES"
+    },
+    "skills": {
+      "color": "#ff8a8a",
+      "label": "SKILLS"
+    },
+    "sources": {
+      "color": "#5fcaa0",
+      "label": "SOURCES"
+    },
+    "workflows": {
+      "color": "#c0c0c0",
+      "label": "WORKFLOWS"
+    }
+  },
+  "edges": [
+    {
+      "source": "agent",
+      "target": "memory/entities/시험성적서"
+    },
+    {
+      "source": "agent",
+      "target": "skills/checklist-대조"
+    },
+    {
+      "source": "memory/_index",
+      "target": "memory/concepts/kc-rohs-기초"
+    },
+    {
+      "source": "memory/_index",
+      "target": "memory/concepts/시험성적서-항목-스키마"
+    },
+    {
+      "source": "memory/_index",
+      "target": "memory/concepts/체크리스트-대조-원칙"
+    },
+    {
+      "source": "memory/_index",
+      "target": "memory/entities/kc-안전인증"
+    },
+    {
+      "source": "memory/_index",
+      "target": "memory/entities/시험성적서"
+    },
+    {
+      "source": "memory/_index",
+      "target": "memory/entities/홍길동-품질팀"
+    },
+    {
+      "source": "memory/_index",
+      "target": "memory/hot"
+    },
+    {
+      "source": "memory/_index",
+      "target": "memory/log"
+    },
+    {
+      "source": "memory/_index",
+      "target": "memory/overview"
+    },
+    {
+      "source": "memory/_index",
+      "target": "memory/sources/2026-05-08-시험성적서-모델X"
+    },
+    {
+      "source": "memory/_index",
+      "target": "memory/sources/2026-05-10-제출문서목록-v2"
+    },
+    {
+      "source": "memory/concepts/kc-rohs-기초",
+      "target": "memory/concepts/시험성적서-항목-스키마"
+    },
+    {
+      "source": "memory/concepts/kc-rohs-기초",
+      "target": "memory/concepts/체크리스트-대조-원칙"
+    },
+    {
+      "source": "memory/concepts/kc-rohs-기초",
+      "target": "memory/entities/kc-안전인증"
+    },
+    {
+      "source": "memory/concepts/kc-rohs-기초",
+      "target": "memory/entities/시험성적서"
+    },
+    {
+      "source": "memory/concepts/kc-rohs-기초",
+      "target": "memory/sources/2026-05-10-제출문서목록-v2"
+    },
+    {
+      "source": "memory/concepts/시험성적서-항목-스키마",
+      "target": "memory/concepts/kc-rohs-기초"
+    },
+    {
+      "source": "memory/concepts/시험성적서-항목-스키마",
+      "target": "memory/entities/시험성적서"
+    },
+    {
+      "source": "memory/concepts/시험성적서-항목-스키마",
+      "target": "memory/hot"
+    },
+    {
+      "source": "memory/concepts/시험성적서-항목-스키마",
+      "target": "workflows/시험성적서-항목추출"
+    },
+    {
+      "source": "memory/concepts/체크리스트-대조-원칙",
+      "target": "memory/concepts/kc-rohs-기초"
+    },
+    {
+      "source": "memory/concepts/체크리스트-대조-원칙",
+      "target": "memory/entities/kc-안전인증"
+    },
+    {
+      "source": "memory/concepts/체크리스트-대조-원칙",
+      "target": "memory/sources/2026-05-10-제출문서목록-v2"
+    },
+    {
+      "source": "memory/concepts/체크리스트-대조-원칙",
+      "target": "skills/checklist-대조"
+    },
+    {
+      "source": "memory/entities/kc-안전인증",
+      "target": "memory/concepts/kc-rohs-기초"
+    },
+    {
+      "source": "memory/entities/kc-안전인증",
+      "target": "memory/concepts/체크리스트-대조-원칙"
+    },
+    {
+      "source": "memory/entities/kc-안전인증",
+      "target": "memory/entities/시험성적서"
+    },
+    {
+      "source": "memory/entities/kc-안전인증",
+      "target": "memory/sources/2026-05-10-제출문서목록-v2"
+    },
+    {
+      "source": "memory/entities/시험성적서",
+      "target": "memory/concepts/시험성적서-항목-스키마"
+    },
+    {
+      "source": "memory/entities/시험성적서",
+      "target": "memory/entities/kc-안전인증"
+    },
+    {
+      "source": "memory/entities/시험성적서",
+      "target": "memory/hot"
+    },
+    {
+      "source": "memory/entities/시험성적서",
+      "target": "memory/sources/2026-05-08-시험성적서-모델X"
+    },
+    {
+      "source": "memory/entities/시험성적서",
+      "target": "workflows/시험성적서-항목추출"
+    },
+    {
+      "source": "memory/entities/홍길동-품질팀",
+      "target": "memory/concepts/체크리스트-대조-원칙"
+    },
+    {
+      "source": "memory/entities/홍길동-품질팀",
+      "target": "memory/hot"
+    },
+    {
+      "source": "memory/entities/홍길동-품질팀",
+      "target": "memory/log"
+    },
+    {
+      "source": "memory/hot",
+      "target": "memory/entities/kc-안전인증"
+    },
+    {
+      "source": "memory/hot",
+      "target": "memory/entities/시험성적서"
+    },
+    {
+      "source": "memory/hot",
+      "target": "memory/log"
+    },
+    {
+      "source": "memory/hot",
+      "target": "memory/sources/2026-05-10-제출문서목록-v2"
+    },
+    {
+      "source": "memory/hot",
+      "target": "skills/checklist-대조"
+    },
+    {
+      "source": "memory/log",
+      "target": "memory/concepts/kc-rohs-기초"
+    },
+    {
+      "source": "memory/log",
+      "target": "memory/concepts/시험성적서-항목-스키마"
+    },
+    {
+      "source": "memory/log",
+      "target": "memory/concepts/체크리스트-대조-원칙"
+    },
+    {
+      "source": "memory/log",
+      "target": "memory/entities/kc-안전인증"
+    },
+    {
+      "source": "memory/log",
+      "target": "memory/entities/홍길동-품질팀"
+    },
+    {
+      "source": "memory/log",
+      "target": "memory/hot"
+    },
+    {
+      "source": "memory/log",
+      "target": "memory/sources/2026-05-08-시험성적서-모델X"
+    },
+    {
+      "source": "memory/log",
+      "target": "memory/sources/2026-05-10-제출문서목록-v2"
+    },
+    {
+      "source": "memory/log",
+      "target": "skills/checklist-대조"
+    },
+    {
+      "source": "memory/overview",
+      "target": "memory/concepts/kc-rohs-기초"
+    },
+    {
+      "source": "memory/overview",
+      "target": "memory/concepts/시험성적서-항목-스키마"
+    },
+    {
+      "source": "memory/overview",
+      "target": "memory/concepts/체크리스트-대조-원칙"
+    },
+    {
+      "source": "memory/overview",
+      "target": "memory/entities/kc-안전인증"
+    },
+    {
+      "source": "memory/overview",
+      "target": "memory/entities/시험성적서"
+    },
+    {
+      "source": "memory/overview",
+      "target": "memory/entities/홍길동-품질팀"
+    },
+    {
+      "source": "memory/overview",
+      "target": "memory/hot"
+    },
+    {
+      "source": "memory/overview",
+      "target": "skills/checklist-대조"
+    },
+    {
+      "source": "memory/sources/2026-05-08-시험성적서-모델X",
+      "target": "memory/concepts/시험성적서-항목-스키마"
+    },
+    {
+      "source": "memory/sources/2026-05-08-시험성적서-모델X",
+      "target": "memory/entities/kc-안전인증"
+    },
+    {
+      "source": "memory/sources/2026-05-08-시험성적서-모델X",
+      "target": "memory/entities/시험성적서"
+    },
+    {
+      "source": "memory/sources/2026-05-08-시험성적서-모델X",
+      "target": "memory/hot"
+    },
+    {
+      "source": "memory/sources/2026-05-10-제출문서목록-v2",
+      "target": "memory/concepts/kc-rohs-기초"
+    },
+    {
+      "source": "memory/sources/2026-05-10-제출문서목록-v2",
+      "target": "memory/concepts/체크리스트-대조-원칙"
+    },
+    {
+      "source": "memory/sources/2026-05-10-제출문서목록-v2",
+      "target": "memory/entities/kc-안전인증"
+    },
+    {
+      "source": "memory/sources/2026-05-10-제출문서목록-v2",
+      "target": "skills/checklist-대조"
+    },
+    {
+      "source": "skills/checklist-대조",
+      "target": "memory/concepts/체크리스트-대조-원칙"
+    },
+    {
+      "source": "skills/checklist-대조",
+      "target": "memory/entities/kc-안전인증"
+    },
+    {
+      "source": "skills/checklist-대조",
+      "target": "memory/hot"
+    },
+    {
+      "source": "workflows/시험성적서-항목추출",
+      "target": "memory/concepts/시험성적서-항목-스키마"
+    },
+    {
+      "source": "workflows/시험성적서-항목추출",
+      "target": "memory/entities/kc-안전인증"
+    },
+    {
+      "source": "workflows/시험성적서-항목추출",
+      "target": "memory/entities/시험성적서"
+    },
+    {
+      "source": "workflows/시험성적서-항목추출",
+      "target": "memory/hot"
+    }
+  ],
+  "nodes": [
+    {
+      "category": "core",
+      "deg": 2,
+      "id": "agent",
+      "label": "규격이"
+    },
+    {
+      "category": "core",
+      "deg": 11,
+      "id": "memory/_index",
+      "label": "메모리 인덱스"
+    },
+    {
+      "category": "concepts",
+      "deg": 12,
+      "id": "memory/concepts/kc-rohs-기초",
+      "label": "KC·RoHS 기초"
+    },
+    {
+      "category": "concepts",
+      "deg": 11,
+      "id": "memory/concepts/시험성적서-항목-스키마",
+      "label": "시험성적서 항목 스키마"
+    },
+    {
+      "category": "concepts",
+      "deg": 12,
+      "id": "memory/concepts/체크리스트-대조-원칙",
+      "label": "체크리스트 대조 원칙 (누락 0)"
+    },
+    {
+      "category": "entities",
+      "deg": 15,
+      "id": "memory/entities/kc-안전인증",
+      "label": "KC 안전인증 (엔티티)"
+    },
+    {
+      "category": "entities",
+      "deg": 14,
+      "id": "memory/entities/시험성적서",
+      "label": "시험성적서 (엔티티)"
+    },
+    {
+      "category": "entities",
+      "deg": 6,
+      "id": "memory/entities/홍길동-품질팀",
+      "label": "홍길동 (품질팀) — 사용자"
+    },
+    {
+      "category": "core",
+      "deg": 14,
+      "id": "memory/hot",
+      "label": "지금 (작업 캐시)"
+    },
+    {
+      "category": "core",
+      "deg": 12,
+      "id": "memory/log",
+      "label": "로그"
+    },
+    {
+      "category": "core",
+      "deg": 9,
+      "id": "memory/overview",
+      "label": "큰 그림"
+    },
+    {
+      "category": "sources",
+      "deg": 7,
+      "id": "memory/sources/2026-05-08-시험성적서-모델X",
+      "label": "(소스) 2026-05-08 모델X 안전시험 성적서"
+    },
+    {
+      "category": "sources",
+      "deg": 10,
+      "id": "memory/sources/2026-05-10-제출문서목록-v2",
+      "label": "(소스) 2026-05-10 인증기관 제출문서 목록 v2"
+    },
+    {
+      "category": "skills",
+      "deg": 9,
+      "id": "skills/checklist-대조",
+      "label": "체크리스트 대조"
+    },
+    {
+      "category": "workflows",
+      "deg": 6,
+      "id": "workflows/시험성적서-항목추출",
+      "label": "시험성적서 항목 추출 워크플로우"
+    }
+  ],
+  "stats": {
+    "broken_links": 0,
+    "by_category": {
+      "concepts": 3,
+      "core": 5,
+      "entities": 3,
+      "skills": 1,
+      "sources": 2,
+      "workflows": 1
+    },
+    "edges": 75,
+    "nodes": 15,
+    "orphans": 0
+  }
+}

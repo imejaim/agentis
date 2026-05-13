@@ -1,8 +1,9 @@
-# Agentis — 기획서 (v0.5)
+# Agentis — 기획서 (v0.6)
 
-> 작성: 코부장 / 2026-05-13. 4차 피드백 반영(Python 가용 → **결정론 우선** 원칙 추가, graphify v1.0 정식 포함, §10 1·2·3 확정).
+> 작성: 코부장 / 2026-05-13. 5차 피드백 반영(`agentis/` 폴더는 보이게, 부팅흐름·결정론 강도·한국어 확정 → **v1.0 일차 구현 완료**, 대표님 시험 대기).
 > 진행 중 문서 — "조금씩 더 살펴보면서 추가하고 다듬자" 기조.
 > 코드 레퍼런스: `reference/` 폴더에 원본 레포 클론됨(깃이그노어). 그래프 스타일 레퍼런스: `docs/ref-graph-style.png`.
+> ▶ **써보는 법은 레포의 `README.md` 와 `seed/README.md`** 참고. 예제는 `examples/spec-doc-checker/`.
 
 ---
 
@@ -84,31 +85,32 @@ v1.0 = "표준 Cline 위에서, **md(설명·규약) + Python(실행·결정론)
 
 ---
 
-## 5. 산출물 = GitHub 레포 내용물 (구조안)
+## 5. 산출물 = GitHub 레포 내용물 (v1 — 만들어진 상태)
 
-| 경로 | 내용 |
-|---|---|
-| `seed/` | The Seed — `.clinerules`용 부트스트랩 md(이것 하나로 완결). "안녕" → 인터뷰 → 자가셋업 → 안내. |
-| `kit/` | The Kit — clarify 인터뷰 스크립트, 워크플로우 md들, 스킬 md들, 메모리뱅크(살아있는 LLM-위키) 스캐폴드, 그래프 뷰어. |
-| `kit/memory/` | 메모리뱅크 시드: `_index.md`, `overview.md`, `log.md`, `hot.md`, `concepts/`, `entities/` (+ `[[..]]` 링크 규약 문서). |
-| `kit/graph/` | graphify 연동 설정 + (또는) 정적 D3 HTML 뷰어 + 메모리.md→노드/엣지 JSON 추출 스크립트. |
-| `docs/` | Agentis 컨셉, 사내 도입 안내(비개발 직무 톤), 에이전트 예시 카탈로그(규격인증 문서 자동화 / 개발 디버깅 / …), `ref-graph-style.png`. |
-| `examples/` | 예제 에이전트(가능하면 "규격인증 문서 자동화" 류). |
-| `lib/` (또는 `kit/skills/*/`) | 결정론적 처리용 **Python 모듈/스크립트** — 일 처리·데이터 변환·검증·메모리.md→그래프 추출·산출 파일 생성. md 스킬과 짝. |
-| `PLAN.md` / `README.md` | 기획서(v0.5) / 소개. |
-| `reference/` | 참고용 원본 레포 클론 — **깃이그노어, 커밋 안 함**. |
+| 경로 | 내용 | 상태 |
+|---|---|---|
+| `seed/agentis.md` | The Seed — `.clinerules` 로 넣는 부트스트랩 커널 (이것 하나로 완결). "안녕" → 인터뷰 → 자가셋업 → 안내 → 작업 루프. | ✅ v1 |
+| `seed/README.md` | 씨앗 설치 가이드 (2가지 방법). | ✅ |
+| `kit/agentis-template/` | 작업 폴더에 `agentis/` 로 복사하는 템플릿: `agent.template.md`, `memory/`(_index·overview·log·hot + concepts·entities·sources + 운영 README), `skills/`(_index + 포맷 README), `workflows/`(템플릿 + 포맷 README), `graph/build_graph.py`. | ✅ v1 |
+| `kit/agentis-template/graph/build_graph.py` | 메모리/스킬/워크플로우 .md 의 `[[링크]]` → `graph.json` + `graph.html`(자체완결형 D3풍, 외부 의존 0). 표준 라이브러리만. | ✅ v1 |
+| `examples/spec-doc-checker/` | 예제 에이전트 "규격이" — 규격인증 문서 자동화. 채워진 `agentis/`(정체성·메모리 9페이지·스킬·워크플로우·그래프) + 동작하는 `run.py`/워크플로우 py + 샘플 데이터. | ✅ v1 |
+| `docs/` | `ref-graph-style.png`(목표 그래프 스타일). (컨셉·도입 안내 문서는 Phase 2.) | 일부 |
+| `PLAN.md` / `README.md` | 기획서(v0.6) / 소개. | ✅ |
+| `reference/` | 참고용 원본 레포 클론 — **깃이그노어, 커밋 안 함**. | — |
+
+> 결정론 처리용 Python 은 별도 `lib/` 안 두고 **각 스킬 폴더(`skills/<이름>/run.py`)·워크플로우(`workflows/<이름>.py`) 안에** 둔다 (그 일과 같이 다님). 공용 헬퍼가 필요해지면 그때 `agentis/_lib/` 신설.
 
 ---
 
 ## 6. 동작 시나리오 (해피 패스)
 
-1. 동료가 작업 폴더에 Agentis `kit/`을 복붙(또는 룰 파일 1개만). `.clinerules`가 `seed/` 부트스트랩 md를 가리킴.
+1. 동료가 작업 폴더의 `.clinerules` 에 `seed/agentis.md` 내용을 넣는다 (선택: `kit/agentis-template/` 를 `agentis/` 로 복붙해 두면 더 갖춰진 채로 시작).
 2. 동료가 **"안녕"**.
-3. 에이전트: *"안녕하세요. 저는 사내 모델 기반이고 아직 이름이 없어요. 이름을 지어주세요. 그리고 어떤 업무를 도울까요?"* → **clarify 인터뷰**.
-4. 에이전트가 **정체성 md** + **메모리뱅크 시드**(`memory/_index.md`, `overview.md`, …)를 자가 생성하고 인터뷰 결과 기록.
-5. **사용법 3줄 안내**.
-6. 이후 매 작업: 업무 처리 → 새로 안 것을 `concepts/`·`entities/` 페이지로 추가하고 `_index`·`log`·`hot` 갱신 → 그래프 갱신 → (반복되는 일이면) *"이거 스킬 md로 만들어 둘까요?"* 제안.
-7. **새 세션**: 메모리뱅크 위키를 먼저 읽고 *"지난번 ○○까지 했었죠. 이어서?"* — 잊지 않음. 그래프 보면 두뇌가 자란 게 보임.
+3. 에이전트: *"안녕하세요. 저는 사내 모델 기반이고 아직 이름이 없어요. 이름을 지어주세요. 그리고 어떤 업무를 도울까요?"* → **clarify 인터뷰** (한 번에 한 질문).
+4. 설계 요약 제시 → 승인받으면 → 작업 폴더에 `agentis/` 생성: `agent.md`(정체성) + `memory/`(_index·overview·log·hot + concepts·entities·sources) + `skills/` + `workflows/` + `graph/build_graph.py`.
+5. **사용법 3줄 안내** → 첫 업무 물어봄.
+6. 이후 매 작업: (결정론) 가능한 건 Python으로 짜고 실행·검증 → 산출물+스크립트+검증결과 전달 → 새로 안 것을 `concepts/`·`entities/`·`sources/` 페이지로 추가, `_index`·`log`·`hot` 갱신 → `build_graph.py` 로 그래프 갱신 → (반복 패턴이면) *"이거 스킬로 만들어 둘까요?"* 제안.
+7. **새 세션**: `agent.md` + 메모리(_index·hot·log)를 먼저 읽고 *"지난번 ○○까지 했었죠. 이어서?"* — 잊지 않음. `graph.html` 열면 두뇌가 자란 게 보임.
 
 **첫 사용자 = 우리 파트 동료들** (규격인증 문서 자동화 에이전트 / 개발 디버깅 에이전트 / 등 다양) → 인터뷰 질문지·예시 카탈로그를 이 폭에 맞춤.
 
@@ -116,11 +118,11 @@ v1.0 = "표준 Cline 위에서, **md(설명·규약) + Python(실행·결정론)
 
 ## 7. 단계 (phased)
 
-- **Phase 0 (완료/진행)** — ① GitHub `imejaim/agentis` 생성·public 전환·푸시 ✅ ② `reference/` 5개 클론 ✅ ③ 그래프 레퍼런스 이미지 확보 ✅. (cline SR 환경 실측은 **추후로 미룸** — v1.0은 "표준 Cline" 가정으로 진행.)
-- **Phase 1 (v1.0 MVP)** — ① **The Seed v1**: 부트스트랩 + clarify 인터뷰 + 정체성/메모리뱅크 자가셋업 + 안내. ② **메모리뱅크 = 살아있는 LLM-위키** 스캐폴드 + 운영 규약(언제 페이지 추가/갱신/링크). ③ **graphify 연동**(+ 경량 D3 폴백)으로 Obsidian식 그래프. ④ **결정론 처리 패턴** — "일은 Python 스크립트로 짜고 검증" 워크플로우 + 예시 스킬 1~2개(md+py). ⑤ 예제 에이전트 1개 dogfood(가능하면 "규격인증 문서 자동화" 류 — 문서 파싱·체크리스트 검증을 Python으로).
-- **Phase 2** — 스킬 라이브러리 확충(md+py), 워크플로우 템플릿, 메모리 위키 lint(모순·낡음 정리, Python), 경로 A("이거 보고 셋팅해줘") 다듬기.
-- **Phase 3** — Hermes식 학습 루프 본격화(스킬 자동생성·개선·nudge·과거대화 검색), graphify 풀 활용(신뢰도/커뮤니티/신노드 강조), cline SR 환경 실측 후 사내 맞춤.
-- **Phase 4** — 사내 확산: 온보딩 문서 + 동료별 파일럿 + 피드백 반영.
+- **Phase 0** ✅ — GitHub `imejaim/agentis` 생성·public·푸시, `reference/` 5개 클론, 그래프 레퍼런스 이미지 확보.
+- **Phase 1 (v1.0 MVP)** ✅ 일차 완성 — ① The Seed v1 (`seed/agentis.md`: 부트스트랩 + clarify 인터뷰 + 자가셋업 + 작업 루프 + 결정론 우선 + 기억 갱신 + 스킬 자가제안 + 그래프) ② 메모리뱅크=살아있는 LLM-위키 스캐폴드 + 운영 규약 (`kit/agentis-template/memory/`) ③ 그래프 빌더 `build_graph.py` (자체완결형 HTML, 외부 의존 0) ④ 결정론 처리: 스킬/워크플로우 = `md + py`, 검증 단계 포함 ⑤ 예제 에이전트 "규격이" (`examples/spec-doc-checker/`) — 실제로 돌아가는 `run.py` 2종 + 샘플 데이터 + 채워진 메모리/그래프. → **다음: 대표님이 cline SR(또는 일반 Cline)에서 `seed/agentis.md` 넣고 "안녕" 해보고 피드백.**
+- **Phase 2** — 사내 검증 피드백 반영, 컨셉·도입 안내 문서(`docs/`), 스킬 라이브러리 확충, 메모리 위키 lint(Python), 경로 A("이 폴더 보고 셋업해줘") 다듬기.
+- **Phase 3** — Hermes식 학습 루프 본격화(스킬 자동생성·개선·nudge·과거대화 검색), graphify 본체 연동(의미관계·커뮤니티·신노드 강조), cline SR 환경 실측 후 사내 맞춤.
+- **Phase 4** — 사내 확산: 동료별 파일럿(규격인증/디버깅/…) + 피드백 반영.
 
 ---
 
@@ -138,30 +140,47 @@ v1.0 = "표준 Cline 위에서, **md(설명·규약) + Python(실행·결정론)
 
 ## 9. 열린 이슈 / 나중에
 
-- cline SR에서 룰/워크플로우/hook/skill이 실제로 어디까지 되는지 — **추후 실측**(대표님이 사내에서). v1.0은 표준 Cline 가정.
-- 그래프 뷰를 cline SR 안에서 어떻게 띄울지(VS Code webview vs 외부 HTML vs Obsidian 자체) — 실측 후 결정. 일단 정적 HTML 한 장 + graphify 출력 가정.
-- graphify(`pyproject.toml`) 설치 — Python 사내 가용 확인됨. 실제 사내망에서 `pip install` 통하는지만 체크하면 됨(안 되면 경량 D3 폴백).
+- **cline SR 실측** — 룰/워크플로우/hook/skill이 실제로 어디까지 되는지. v1.0은 "표준 Cline + 단일 룰 파일" 가정으로 만들어 둠 → 대표님이 사내에서 `seed/agentis.md` 넣고 돌려본 결과를 받아 보강.
+- **그래프 뷰 띄우기** — `build_graph.py` 가 자체완결형 `graph.html` 을 만드므로 cline SR 안에서도 그냥 파일 열면 됨(외부 의존 0). graphify 본체 연동(의미관계·클러스터)은 Phase 3.
+- graphify(`pyproject.toml`) 설치 — Python 사내 가용 확인됨. 사내망 `pip install` 통하는지만 추후 체크(안 돼도 v1.0은 영향 없음 — `build_graph.py` 가 기본 경로).
 - 멀티채널·cron·스킬 마켓 — Phase 3+.
 
 ---
 
-## 10. 확정된 결정 (1·2·3 OK)
+## 10. 확정된 결정
 
-- ✅ v1.0 범위(§2) 그대로 진행 — 결정론 우선(0) + Cline 룰 기반(1) + 살아있는 메모리뱅크(2) + graphify 그래프(3).
-- ✅ 레포 구조안(§5) 그대로 — `seed/` `kit/` `docs/` `examples/` (+ Python은 `lib/` 또는 스킬 폴더 내 `*.py`).
-- ✅ graphify v1.0부터 정식 연동 (Python 가용). 경량 D3 폴백 병행.
-
----
-
-## 11. 코부장 다음 행동
-
-1. ✅ public 전환, `docs/ref-graph-style.png` 추가, PLAN v0.5(결정론 우선·1·2·3 확정).
-2. ⏭️ **The Seed v1 초안** — `seed/` 부트스트랩 md (인터뷰·자가셋업·안내) + `.clinerules` 엔트리.
-3. clarify 인터뷰 스크립트 — `reference/superpowers/skills/` brainstorming 스킬 코드 분석 → 업무 에이전트용 각색.
-4. 메모리뱅크=살아있는 LLM-위키 스캐폴드 & 운영규약 — `reference/karpathy-llm-wiki/llm-wiki.md` + Cline 메모리뱅크 구조 + OMC `/wiki` 참고. (페이지 추가/갱신/링크는 가능하면 Python 헬퍼로 결정론적으로.)
-5. 결정론 처리 워크플로우 — "일은 Python으로 짜고 → 실행 → 검증" 패턴 md + 예시 스킬 1~2개(md+py).
-6. 그래프 뷰 — graphify 연동(메모리 .md를 graphify에 먹여 그래프 산출) + 경량 D3 HTML 폴백. `reference/graphify/ARCHITECTURE.md`·`pyproject.toml` 분석.
+- ✅ v1.0 범위(§2): 결정론 우선(0) + Cline 룰 기반(1) + 살아있는 메모리뱅크=LLM위키(2) + graphify식 그래프(3).
+- ✅ `agentis/` 폴더는 **점 없이 보이게**. 부팅 흐름·결정론 강도·한국어 — 다 확정대로.
+- ✅ graphify v1.0부터 (Python 가용). `build_graph.py` 가 폴백 겸 기본.
+- ✅ 결정론 처리 Python 은 스킬/워크플로우 폴더 안에 (`run.py` / `<이름>.py`). 공용 헬퍼 필요해지면 그때 `agentis/_lib/`.
 
 ---
 
-*— 코부장. §10 확정대로 The Seed v1 초안 들어갑니다.*
+## 11. 코부장 진행 현황 / 다음
+
+1. ✅ public, `docs/ref-graph-style.png`, PLAN v0.6.
+2. ✅ The Seed v1 — `seed/agentis.md` (`.clinerules` 로 넣는 부트스트랩 커널) + `seed/README.md`.
+3. ✅ The Kit v1 — `kit/agentis-template/` (agent 템플릿 / memory 스캐폴드+운영규약 / skills·workflows 포맷 / `build_graph.py`).
+4. ✅ 그래프 빌더 — `build_graph.py`: memory·skills·workflows 의 `[[링크]]` → `graph.json` + 자체완결형 `graph.html`. 표준 라이브러리만, 외부 의존 0. (테스트 통과)
+5. ✅ 예제 에이전트 "규격이" — `examples/spec-doc-checker/`: 채워진 `agentis/`(정체성·메모리 9페이지·스킬·워크플로우·그래프) + 동작하는 `run.py` 2종(체크리스트 대조 / 시험성적서 항목추출, 검증 단계 포함) + 샘플 데이터. (3개 스크립트 다 실행 확인: 검증 OK, 누락/`??` 정상 탐지)
+6. ⏭️ **대표님 시험** — cline SR(또는 일반 Cline)에서 `seed/agentis.md` 를 `.clinerules` 로 넣고 "안녕" → 인터뷰·자가셋업·작업·그래프 흐름이 그 환경에서 도는지 확인 → 피드백.
+7. ⏭️ (피드백 후) Phase 2: 안 되는 부분 보강, 컨셉/도입 문서, lint, 스킬 라이브러리.
+
+---
+
+## 12. 대표님 — 어떻게 써보면 되나 (요약; 자세한 건 레포 `README.md`)
+
+**가장 간단히 (씨앗만):**
+1. cline SR 쓸 작업 폴더에 `.clinerules` 파일을 만들고, 이 레포 `seed/agentis.md` 내용을 그대로 붙여넣는다. (또는 `.clinerules/agentis.md` 로 저장)
+2. Cline 대화창에 **`안녕`**.
+3. 에이전트가 이름을 지어달라 하고 → 짧게 인터뷰 → 설계 요약 보여주고 승인받으면 → 작업 폴더에 `agentis/` 폴더(정체성·메모리·스킬·워크플로우·그래프)를 스스로 만든다 → 사용법 안내 → 첫 업무 물어봄.
+4. 일 시키고, 끝나면 `python agentis/graph/build_graph.py --open` 으로 두뇌 그래프를 본다. 세션 닫았다 다시 열어도 다 기억함.
+
+**더 갖춰서 (키트까지):**
+1. 이 레포 `kit/agentis-template/` 폴더를 작업 폴더에 `agentis/` 라는 이름으로 통째로 복사.
+2. 위 1~2번(`seed/agentis.md` → `.clinerules`, "안녕")은 동일. 에이전트가 빈 템플릿을 인터뷰 결과로 채운다.
+
+**먼저 구경만 (예제):**
+- `examples/spec-doc-checker/` 폴더로 가서 `python agentis/graph/build_graph.py --open` → "규격이"의 두뇌 그래프가 뜸. `agentis/agent.md`, `agentis/memory/*` 보면 며칠 일한 에이전트가 어떤 모습인지 알 수 있음. `agentis/skills/checklist-대조/run.py`, `agentis/workflows/시험성적서-항목추출.py` 는 샘플 데이터로 바로 돌려볼 수 있음 (README 참고).
+
+> 막히면 알려주세요 — cline SR이 룰/워크플로우 중 뭘 못 먹는지 보이면 거기 맞춰 씨앗을 고칩니다.

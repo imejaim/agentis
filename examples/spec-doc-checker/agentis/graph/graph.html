@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<title>Agentis — 두뇌 그래프</title>
+<style>
+  html,body{margin:0;height:100%;background:#0e1116;color:#cdd3da;font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden}
+  #hud{position:fixed;left:14px;top:12px;z-index:10;background:rgba(14,17,22,.78);border:1px solid #2a313c;border-radius:8px;padding:10px 12px;backdrop-filter:blur(4px);max-width:280px}
+  #hud h1{font-size:13px;margin:0 0 6px;color:#e7ecf2;letter-spacing:.04em}
+  #hud .stat{color:#8b95a1;font-size:12px}
+  #legend{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px 10px}
+  #legend span{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#9aa4af;cursor:default}
+  #legend i{width:9px;height:9px;border-radius:50%;display:inline-block}
+  #tip{position:fixed;pointer-events:none;background:#1b212b;border:1px solid #333c48;border-radius:6px;padding:4px 8px;font-size:12px;color:#e7ecf2;opacity:0;transition:opacity .1s;z-index:20}
+  #hint{position:fixed;right:14px;bottom:12px;color:#5b6470;font-size:11px;z-index:10}
+  svg{width:100vw;height:100vh;display:block;cursor:grab}
+  svg:active{cursor:grabbing}
+  .link{stroke:#3a424e;stroke-opacity:.5}
+  .node circle{stroke:#0e1116;stroke-width:1.4px;cursor:pointer}
+  .node text{fill:#aeb6bf;font-size:10px;paint-order:stroke;stroke:#0e1116;stroke-width:3px;stroke-linejoin:round;pointer-events:none}
+  .dim{opacity:.12}
+  .link.dim{stroke-opacity:.05}
+</style></head><body>
+<div id="hud">
+  <h1>🧠 AGENTIS — 두뇌 그래프</h1>
+  <div class="stat" id="stat"></div>
+  <div id="legend"></div>
+</div>
+<div id="tip"></div>
+<div id="hint">드래그=이동 · 휠=확대 · 노드 드래그=고정 · 노드 클릭=이웃 강조 · 빈 곳 클릭=해제</div>
+<svg id="svg"></svg>
+<script>
+const DATA = {"nodes": [{"id": "agent", "label": "규격이", "category": "core", "deg": 2}, {"id": "memory/_index", "label": "메모리 인덱스", "category": "core", "deg": 11}, {"id": "memory/concepts/kc-rohs-기초", "label": "KC·RoHS 기초", "category": "concepts", "deg": 12}, {"id": "memory/concepts/시험성적서-항목-스키마", "label": "시험성적서 항목 스키마", "category": "concepts", "deg": 11}, {"id": "memory/concepts/체크리스트-대조-원칙", "label": "체크리스트 대조 원칙 (누락 0)", "category": "concepts", "deg": 12}, {"id": "memory/entities/kc-안전인증", "label": "KC 안전인증 (엔티티)", "category": "entities", "deg": 15}, {"id": "memory/entities/시험성적서", "label": "시험성적서 (엔티티)", "category": "entities", "deg": 14}, {"id": "memory/entities/홍길동-품질팀", "label": "홍길동 (품질팀) — 사용자", "category": "entities", "deg": 6}, {"id": "memory/hot", "label": "지금 (작업 캐시)", "category": "core", "deg": 14}, {"id": "memory/log", "label": "로그", "category": "core", "deg": 12}, {"id": "memory/overview", "label": "큰 그림", "category": "core", "deg": 9}, {"id": "memory/sources/2026-05-08-시험성적서-모델X", "label": "(소스) 2026-05-08 모델X 안전시험 성적서", "category": "sources", "deg": 7}, {"id": "memory/sources/2026-05-10-제출문서목록-v2", "label": "(소스) 2026-05-10 인증기관 제출문서 목록 v2", "category": "sources", "deg": 10}, {"id": "skills/checklist-대조", "label": "체크리스트 대조", "category": "skills", "deg": 9}, {"id": "workflows/시험성적서-항목추출", "label": "시험성적서 항목 추출 워크플로우", "category": "workflows", "deg": 6}], "edges": [{"source": "agent", "target": "memory/entities/시험성적서"}, {"source": "agent", "target": "skills/checklist-대조"}, {"source": "memory/_index", "target": "memory/concepts/kc-rohs-기초"}, {"source": "memory/_index", "target": "memory/concepts/시험성적서-항목-스키마"}, {"source": "memory/_index", "target": "memory/concepts/체크리스트-대조-원칙"}, {"source": "memory/_index", "target": "memory/entities/kc-안전인증"}, {"source": "memory/_index", "target": "memory/entities/시험성적서"}, {"source": "memory/_index", "target": "memory/entities/홍길동-품질팀"}, {"source": "memory/_index", "target": "memory/hot"}, {"source": "memory/_index", "target": "memory/log"}, {"source": "memory/_index", "target": "memory/overview"}, {"source": "memory/_index", "target": "memory/sources/2026-05-08-시험성적서-모델X"}, {"source": "memory/_index", "target": "memory/sources/2026-05-10-제출문서목록-v2"}, {"source": "memory/concepts/kc-rohs-기초", "target": "memory/concepts/시험성적서-항목-스키마"}, {"source": "memory/concepts/kc-rohs-기초", "target": "memory/concepts/체크리스트-대조-원칙"}, {"source": "memory/concepts/kc-rohs-기초", "target": "memory/entities/kc-안전인증"}, {"source": "memory/concepts/kc-rohs-기초", "target": "memory/entities/시험성적서"}, {"source": "memory/concepts/kc-rohs-기초", "target": "memory/sources/2026-05-10-제출문서목록-v2"}, {"source": "memory/concepts/시험성적서-항목-스키마", "target": "memory/concepts/kc-rohs-기초"}, {"source": "memory/concepts/시험성적서-항목-스키마", "target": "memory/entities/시험성적서"}, {"source": "memory/concepts/시험성적서-항목-스키마", "target": "memory/hot"}, {"source": "memory/concepts/시험성적서-항목-스키마", "target": "workflows/시험성적서-항목추출"}, {"source": "memory/concepts/체크리스트-대조-원칙", "target": "memory/concepts/kc-rohs-기초"}, {"source": "memory/concepts/체크리스트-대조-원칙", "target": "memory/entities/kc-안전인증"}, {"source": "memory/concepts/체크리스트-대조-원칙", "target": "memory/sources/2026-05-10-제출문서목록-v2"}, {"source": "memory/concepts/체크리스트-대조-원칙", "target": "skills/checklist-대조"}, {"source": "memory/entities/kc-안전인증", "target": "memory/concepts/kc-rohs-기초"}, {"source": "memory/entities/kc-안전인증", "target": "memory/concepts/체크리스트-대조-원칙"}, {"source": "memory/entities/kc-안전인증", "target": "memory/entities/시험성적서"}, {"source": "memory/entities/kc-안전인증", "target": "memory/sources/2026-05-10-제출문서목록-v2"}, {"source": "memory/entities/시험성적서", "target": "memory/concepts/시험성적서-항목-스키마"}, {"source": "memory/entities/시험성적서", "target": "memory/entities/kc-안전인증"}, {"source": "memory/entities/시험성적서", "target": "memory/hot"}, {"source": "memory/entities/시험성적서", "target": "memory/sources/2026-05-08-시험성적서-모델X"}, {"source": "memory/entities/시험성적서", "target": "workflows/시험성적서-항목추출"}, {"source": "memory/entities/홍길동-품질팀", "target": "memory/concepts/체크리스트-대조-원칙"}, {"source": "memory/entities/홍길동-품질팀", "target": "memory/hot"}, {"source": "memory/entities/홍길동-품질팀", "target": "memory/log"}, {"source": "memory/hot", "target": "memory/entities/kc-안전인증"}, {"source": "memory/hot", "target": "memory/entities/시험성적서"}, {"source": "memory/hot", "target": "memory/log"}, {"source": "memory/hot", "target": "memory/sources/2026-05-10-제출문서목록-v2"}, {"source": "memory/hot", "target": "skills/checklist-대조"}, {"source": "memory/log", "target": "memory/concepts/kc-rohs-기초"}, {"source": "memory/log", "target": "memory/concepts/시험성적서-항목-스키마"}, {"source": "memory/log", "target": "memory/concepts/체크리스트-대조-원칙"}, {"source": "memory/log", "target": "memory/entities/kc-안전인증"}, {"source": "memory/log", "target": "memory/entities/홍길동-품질팀"}, {"source": "memory/log", "target": "memory/hot"}, {"source": "memory/log", "target": "memory/sources/2026-05-08-시험성적서-모델X"}, {"source": "memory/log", "target": "memory/sources/2026-05-10-제출문서목록-v2"}, {"source": "memory/log", "target": "skills/checklist-대조"}, {"source": "memory/overview", "target": "memory/concepts/kc-rohs-기초"}, {"source": "memory/overview", "target": "memory/concepts/시험성적서-항목-스키마"}, {"source": "memory/overview", "target": "memory/concepts/체크리스트-대조-원칙"}, {"source": "memory/overview", "target": "memory/entities/kc-안전인증"}, {"source": "memory/overview", "target": "memory/entities/시험성적서"}, {"source": "memory/overview", "target": "memory/entities/홍길동-품질팀"}, {"source": "memory/overview", "target": "memory/hot"}, {"source": "memory/overview", "target": "skills/checklist-대조"}, {"source": "memory/sources/2026-05-08-시험성적서-모델X", "target": "memory/concepts/시험성적서-항목-스키마"}, {"source": "memory/sources/2026-05-08-시험성적서-모델X", "target": "memory/entities/kc-안전인증"}, {"source": "memory/sources/2026-05-08-시험성적서-모델X", "target": "memory/entities/시험성적서"}, {"source": "memory/sources/2026-05-08-시험성적서-모델X", "target": "memory/hot"}, {"source": "memory/sources/2026-05-10-제출문서목록-v2", "target": "memory/concepts/kc-rohs-기초"}, {"source": "memory/sources/2026-05-10-제출문서목록-v2", "target": "memory/concepts/체크리스트-대조-원칙"}, {"source": "memory/sources/2026-05-10-제출문서목록-v2", "target": "memory/entities/kc-안전인증"}, {"source": "memory/sources/2026-05-10-제출문서목록-v2", "target": "skills/checklist-대조"}, {"source": "skills/checklist-대조", "target": "memory/concepts/체크리스트-대조-원칙"}, {"source": "skills/checklist-대조", "target": "memory/entities/kc-안전인증"}, {"source": "skills/checklist-대조", "target": "memory/hot"}, {"source": "workflows/시험성적서-항목추출", "target": "memory/concepts/시험성적서-항목-스키마"}, {"source": "workflows/시험성적서-항목추출", "target": "memory/entities/kc-안전인증"}, {"source": "workflows/시험성적서-항목추출", "target": "memory/entities/시험성적서"}, {"source": "workflows/시험성적서-항목추출", "target": "memory/hot"}], "stats": {"nodes": 15, "edges": 75, "orphans": 0, "broken_links": 0, "by_category": {"concepts": 3, "core": 5, "entities": 3, "skills": 1, "sources": 2, "workflows": 1}}, "broken": [], "categories": {"core": {"label": "CORE", "color": "#7fd1ff"}, "concepts": {"label": "CONCEPTS", "color": "#f0b860"}, "entities": {"label": "ENTITIES", "color": "#9b8cff"}, "sources": {"label": "SOURCES", "color": "#5fcaa0"}, "skills": {"label": "SKILLS", "color": "#ff8a8a"}, "workflows": {"label": "WORKFLOWS", "color": "#c0c0c0"}, "_other": {"label": "OTHER", "color": "#888888"}}};
+const CAT = DATA.categories;
+const svg = document.getElementById('svg');
+const tip = document.getElementById('tip');
+const NS = 'http://www.w3.org/2000/svg';
+let W = innerWidth, H = innerHeight;
+
+const nodes = DATA.nodes.map(n => ({...n,
+  x: W/2 + (Math.random()-.5)*Math.min(W,H)*0.6,
+  y: H/2 + (Math.random()-.5)*Math.min(W,H)*0.6, vx:0, vy:0, fixed:false}));
+const idx = Object.fromEntries(nodes.map((n,i)=>[n.id,i]));
+const links = DATA.edges.map(e=>({s:idx[e.source],t:idx[e.target]})).filter(e=>e.s!=null&&e.t!=null);
+nodes.forEach(n=>{ n.r = 4 + Math.sqrt(n.deg)*2.2; });
+
+let tx=0,ty=0,scale=1;
+const root=document.createElementNS(NS,'g'); svg.appendChild(root);
+const gL=document.createElementNS(NS,'g'); root.appendChild(gL);
+const gN=document.createElementNS(NS,'g'); root.appendChild(gN);
+function applyView(){ root.setAttribute('transform',`translate(${tx},${ty}) scale(${scale})`); }
+
+const linkEls=links.map(()=>{const l=document.createElementNS(NS,'line');l.setAttribute('class','link');gL.appendChild(l);return l;});
+const nodeEls=nodes.map(n=>{
+  const g=document.createElementNS(NS,'g'); g.setAttribute('class','node');
+  const c=document.createElementNS(NS,'circle'); c.setAttribute('r',n.r);
+  c.setAttribute('fill',(CAT[n.category]||CAT._other).color);
+  const t=document.createElementNS(NS,'text'); t.setAttribute('x',n.r+3); t.setAttribute('y',3);
+  t.textContent=n.label.length>30? n.label.slice(0,29)+'…':n.label;
+  if(nodes.length>120 && n.deg<2) t.setAttribute('opacity','0');
+  g.appendChild(c); g.appendChild(t); gN.appendChild(g); g._n=n; g._c=c; g._t=t;
+  c.addEventListener('mouseenter',ev=>{tip.textContent=n.label+'  ('+(CAT[n.category]||CAT._other).label.toLowerCase()+', deg '+n.deg+')';tip.style.opacity=1;mv(ev);});
+  c.addEventListener('mousemove',mv); c.addEventListener('mouseleave',()=>tip.style.opacity=0);
+  c.addEventListener('click',ev=>{ev.stopPropagation();focusOn(n);});
+  return g;
+});
+function mv(ev){tip.style.left=(ev.clientX+12)+'px';tip.style.top=(ev.clientY+10)+'px';}
+
+const adj=nodes.map(()=>new Set());
+links.forEach(l=>{adj[l.s].add(l.t);adj[l.t].add(l.s);});
+let focus=null;
+function focusOn(n){
+  focus=(focus===n)?null:n;
+  nodeEls.forEach((g,i)=>{const on=!focus||i===idx[focus.id]||adj[idx[focus.id]].has(i);g.classList.toggle('dim',focus&&!on);});
+  linkEls.forEach((el,i)=>{const l=links[i];const on=!focus||l.s===idx[focus.id]||l.t===idx[focus.id];el.classList.toggle('dim',focus&&!on);});
+}
+svg.addEventListener('click',()=>{if(focus){focus=null;nodeEls.forEach(g=>g.classList.remove('dim'));linkEls.forEach(e=>e.classList.remove('dim'));}});
+
+let alpha=1;
+function tick(){
+  alpha*=0.992; if(alpha<0.004)alpha=0.004;
+  for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){
+    const a=nodes[i],b=nodes[j];let dx=a.x-b.x,dy=a.y-b.y,d2=dx*dx+dy*dy||0.01;
+    const f=1800/d2*alpha,d=Math.sqrt(d2),fx=dx/d*f,fy=dy/d*f;a.vx+=fx;a.vy+=fy;b.vx-=fx;b.vy-=fy;
+  }
+  const L=72;
+  for(const l of links){const a=nodes[l.s],b=nodes[l.t];let dx=b.x-a.x,dy=b.y-a.y,d=Math.sqrt(dx*dx+dy*dy)||0.01;
+    const f=(d-L)*0.036,fx=dx/d*f,fy=dy/d*f;a.vx+=fx;a.vy+=fy;b.vx-=fx;b.vy-=fy;}
+  for(const n of nodes){n.vx+=(W/2-n.x)*0.0009;n.vy+=(H/2-n.y)*0.0009;}
+  for(const n of nodes){if(n.fixed)continue;n.vx*=0.82;n.vy*=0.82;n.x+=n.vx;n.y+=n.vy;}
+  for(let i=0;i<links.length;i++){const l=links[i],a=nodes[l.s],b=nodes[l.t],el=linkEls[i];
+    el.setAttribute('x1',a.x);el.setAttribute('y1',a.y);el.setAttribute('x2',b.x);el.setAttribute('y2',b.y);}
+  for(let i=0;i<nodes.length;i++)nodeEls[i].setAttribute('transform','translate('+nodes[i].x+','+nodes[i].y+')');
+  requestAnimationFrame(tick);
+}
+let panning=false,px=0,py=0,dragging=null;
+svg.addEventListener('mousedown',ev=>{if(ev.target===svg||ev.target===root){panning=true;px=ev.clientX;py=ev.clientY;}});
+addEventListener('mousemove',ev=>{
+  if(panning){tx+=ev.clientX-px;ty+=ev.clientY-py;px=ev.clientX;py=ev.clientY;applyView();}
+  if(dragging){const r=svg.getBoundingClientRect();dragging.x=(ev.clientX-r.left-tx)/scale;dragging.y=(ev.clientY-r.top-ty)/scale;dragging.vx=dragging.vy=0;alpha=Math.max(alpha,0.3);}
+});
+addEventListener('mouseup',()=>{panning=false;dragging=null;});
+svg.addEventListener('wheel',ev=>{ev.preventDefault();const s=Math.exp(-ev.deltaY*0.0015),mx=ev.clientX,my=ev.clientY;tx=mx-(mx-tx)*s;ty=my-(my-ty)*s;scale*=s;applyView();},{passive:false});
+nodeEls.forEach(g=>g._c.addEventListener('mousedown',ev=>{ev.stopPropagation();dragging=g._n;dragging.fixed=true;}));
+
+document.getElementById('stat').textContent=
+  `${DATA.stats.nodes} 노드 · ${DATA.stats.edges} 링크 · 고아 ${DATA.stats.orphans}`+(DATA.stats.broken_links?` · 깨진링크 ${DATA.stats.broken_links}`:'');
+const used=[...new Set(nodes.map(n=>n.category))].sort();
+document.getElementById('legend').innerHTML=used.map(c=>{const s=CAT[c]||CAT._other;const k=DATA.stats.by_category[c]||0;return `<span><i style="background:${s.color}"></i>${s.label} ${k}</span>`;}).join('');
+addEventListener('resize',()=>{W=innerWidth;H=innerHeight;});
+applyView();tick();
+</script></body></html>

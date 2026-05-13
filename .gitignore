@@ -17,3 +17,9 @@ dist/
 *.log
 .env
 .env.*
+
+# --- Kit template: generated graph output (regenerated per-workspace; example/ keeps its demo output) ---
+kit/agentis-template/graph/graph.html
+kit/agentis-template/graph/graph.json
+__pycache__/
+*.pyc
