@@ -1,0 +1,19 @@
+# --- Reference repos (cloned for code-level study; do NOT commit) ---
+reference/
+
+# --- OMC / Claude Code local state ---
+.omc/
+.claude/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+
+# --- Node (in case tooling is added later) ---
+node_modules/
+dist/
+*.log
+.env
+.env.*
