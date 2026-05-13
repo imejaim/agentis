@@ -22,9 +22,13 @@ Agentis는 "에이전트를 만드는 에이전트 환경"입니다. 동료가 �
 경로 B) cline SR 워크스페이스 룰에 seed/ 의 파일 1개만 넣고 → "안녕"
 ```
 
-> ⚠️ 아직 설계/구현 단계입니다. 자세한 계획은 [`PLAN.md`](./PLAN.md) 참고 (현재 v0.4).
+> ⚠️ 아직 설계/구현 단계입니다. 자세한 계획은 [`PLAN.md`](./PLAN.md) 참고 (현재 v0.5).
 
-**v1.0 핵심**: ① Cline 룰(md 파일) 기반으로 동작 — superpowers처럼 ② Cline 메모리뱅크를 Hermes식 자가확장 + LLM-위키 방식으로 진화시켜 "두뇌"로 ③ graphify로 Obsidian처럼 그래프화 → 지식 쌓이는 게 눈에 보이게. (목표 그래프 스타일: [`docs/ref-graph-style.png`](./docs/ref-graph-style.png))
+**v1.0 핵심**:
+- ⓪ **결정론 우선** — 사내 에이전트라 정확성·신뢰성이 최우선. 업무처리는 최대한 **Python 코드**로 짜서 재실행·검증 가능하게. (md = 지식·규약, py = 실제 처리)
+- ① **Cline 룰(md 파일) 기반**으로 동작 — superpowers처럼
+- ② **Cline 메모리뱅크 → 살아있는 LLM-위키** — Hermes식 자가확장 + LLM-위키 방식으로 진화시켜 "두뇌"로
+- ③ **graphify로 Obsidian처럼 그래프화** → 지식 쌓이는 게 눈에 보이게 (목표 그래프 스타일: [`docs/ref-graph-style.png`](./docs/ref-graph-style.png))
 
 ## 레포 구조 (계획)
 
