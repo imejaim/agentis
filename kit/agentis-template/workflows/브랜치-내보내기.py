@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# agentis-kit: v1.3 / 브랜치-내보내기
 """
 브랜치-내보내기 — 이 에이전트의 agentis/ 를 다른 사용자에게 넘길 '브랜치' 폴더로 묶는다.
 

@@ -96,6 +96,23 @@ python agentis/workflows/브랜치-비교.py <A 브랜치> <B 브랜치> --out �
 
 자세한 흐름: 씨드(`seed/agentis.md`) §5 — "공유와 진화 — 브랜치 / 팩 / 메인".
 
+### 씨드 자체의 업그레이드 (v1.3 신규)
+
+표준 씨드가 v1.3 → v1.4 로 가도, **자기가 다듬은 씨드는 덮어쓰지 않는다.** 절(§) 단위로 받아온다:
+
+```bash
+# 1) 표준과 내 씨드 비교 — 절별 보고서 + plan.json 템플릿 생성
+python agentis/workflows/씨드-업그레이드.py --check --from <표준씨드경로>
+
+# 2) plan.json 의 각 절 action 결정 (take/keep/replace-with-file:<머지파일>) 후
+python agentis/workflows/씨드-업그레이드.py --apply --plan plan.json --from <표준씨드경로>
+
+# 3) 잘 다듬은 씨드를 메인 큐레이터에게 송신하고 싶을 때
+python agentis/workflows/씨드-업그레이드.py --export-branch
+```
+
+핵심: 씨드 각 절에 박힌 `<!-- @section: N -->` 앵커가 키 → `UNCHANGED / NEW / LOCAL-CUSTOM / DIFF` 4분류 → 사람이 결정. 자세히: 씨드 §5-5.
+
 ## 능력치 — 진화가 눈에 보이게 (v1.2)
 
 게임 캐릭터처럼 에이전트의 성장이 보입니다. 한 줄로 갱신:
@@ -124,4 +141,8 @@ python agentis/graph/agent-stats.py
 
 ## 상태
 
-**v1.2 구현 완료** — 씨드(공유와 진화 §5 + 이름 불변식 + 능력치 갱신) · 키트 + 4종 공유 워크플로우(브랜치-내보내기 / 팩-병합 / 브랜치-비교 / 메인-동기화) · 그래프 빌더 · **능력치 산출기**(`agent-stats.py`) · 예제 에이전트 + 예제 브랜치 폴더(`examples/spec-doc-checker/규격이-브랜치-2026-05-14/`) + 비전 문서. 모든 스크립트 실행 테스트 통과. 다음: 실제 사내 한 사이클(브랜치 송수신·리브랜드) 피드백. 진행: [`PLAN.md`](./PLAN.md).
+**v1.3 구현 완료** — v1.2의 모든 것 + 두 가지 큰 변화:
+- **키트 우선·씨드는 폴백** — 검증된 키트 파일이 1순위. 즉흥 생성은 degraded 모드(`# agentis-kit: improvised` 표시). 키트 핵심 .py 6개에 `# agentis-kit: v1.3` 시그니처 + `.kit-version` 마커.
+- **씨드 자체의 공유와 진화** — 씨드 각 절에 `<!-- @section: N -->` 앵커. 새 워크플로우 `씨드-업그레이드.py` (`--check`/`--apply --plan`/`--export-branch`) 로 표준 씨드 업데이트를 **절 단위 팩**으로 받음 — 개인 진화 보존. 두 층(에이전트·씨드)에 같은 메타포 자기유사적 적용.
+
+모든 스크립트 실행 테스트 통과 (self-compare / 디프 시나리오 / apply 머지 / export-branch). 다음: 실제 사내 한 사이클(브랜치 송수신·리브랜드 + 씨드 업그레이드 한 번) 피드백. 진행: [`PLAN.md`](./PLAN.md) (v0.9).

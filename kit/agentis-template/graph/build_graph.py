@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# agentis-kit: v1.3 / build_graph
 """
 build_graph.py — 에이전트의 "두뇌"(agentis/ 폴더의 마크다운들)를 그래프로 만든다.
 

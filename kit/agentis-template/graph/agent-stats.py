@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# agentis-kit: v1.3 / agent-stats
 """
 agent-stats.py — 에이전트의 능력치(Character Sheet) 자동 산출.
 

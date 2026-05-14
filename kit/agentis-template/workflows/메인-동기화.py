@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# agentis-kit: v1.3 / 메인-동기화
 """
 메인-동기화 — agent.md 의 main_repo URL 을 통해 내 에이전트를 사내 메인과 동기화한다.
 

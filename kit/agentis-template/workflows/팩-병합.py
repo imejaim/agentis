@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# agentis-kit: v1.3 / 팩-병합
 """
 팩-병합 — 다른 에이전트의 pack/ 폴더에서 skills/workflows/memory/concepts 만 골라 내 agentis/ 에 합친다.
 
