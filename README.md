@@ -42,7 +42,7 @@ Agentis는 "에이전트를 만드는 에이전트 환경"입니다. 동료가 �
 - ⓪ **결정론 우선** — 사내 에이전트라 정확성·신뢰성이 최우선. 업무처리는 최대한 **Python 코드**로 짜서 재실행·검증 가능하게. (md = 지식·규약, py = 실제 처리)
 - ① **Cline 룰(md 파일) 기반**으로 동작 — superpowers처럼, 빌드·설치 의존 없음
 - ② **Cline 메모리뱅크 → 살아있는 LLM-위키** — Hermes식 자가확장 + LLM-위키 방식으로 진화시켜 "두뇌"로 (`agentis/memory/`)
-- ③ **Obsidian처럼 그래프화** → 지식 쌓이는 게 눈에 보이게. `agentis/graph/build_graph.py` 가 자체완결형 `graph.html` 생성 (외부 의존 0 — 사내망/오프라인 OK). graphify 본체 연동은 추후. (목표 스타일: [`docs/ref-graph-style.png`](./docs/ref-graph-style.png))
+- ③ **3D 두뇌 그래프 (v1.4)** → 지식 쌓이는 게 눈에 보이게. `agentis/graph/build_graph.py` 가 Three.js + 3d-force-graph 인라인 자체완결 `graph.html` 생성 (외부 의존 0 — 사내망/오프라인 OK). VS Code 의 Simple Browser 로 사이드 탭에 띄움. graphify 본체 연동은 추후. (목표 스타일: [`docs/ref-graph-style.png`](./docs/ref-graph-style.png))
 
 ## 레포 구조
 
@@ -141,8 +141,10 @@ python agentis/graph/agent-stats.py
 
 ## 상태
 
-**v1.3 구현 완료** — v1.2의 모든 것 + 두 가지 큰 변화:
-- **키트 우선·씨드는 폴백** — 검증된 키트 파일이 1순위. 즉흥 생성은 degraded 모드(`# agentis-kit: improvised` 표시). 키트 핵심 .py 6개에 `# agentis-kit: v1.3` 시그니처 + `.kit-version` 마커.
-- **씨드 자체의 공유와 진화** — 씨드 각 절에 `<!-- @section: N -->` 앵커. 새 워크플로우 `씨드-업그레이드.py` (`--check`/`--apply --plan`/`--export-branch`) 로 표준 씨드 업데이트를 **절 단위 팩**으로 받음 — 개인 진화 보존. 두 층(에이전트·씨드)에 같은 메타포 자기유사적 적용.
+**v1.4 구현 완료** — v1.3의 모든 것 + **3D 두뇌 그래프 + 캐릭터 자산 동봉**:
+- **3D 두뇌 그래프** — `build_graph.py` 가 Three.js + 3d-force-graph 를 인라인한 자체완결 `graph.html` 생성 (외부 의존 0, 1.3MB). 다크 테마 / 카테고리 색 / idle 자동 공전 / 노드 포커스 + 이웃 패널 / 범례 토글. **VS Code 의 Simple Browser** 로 사이드 탭에 띄우면 작업과 그래프 공존.
+- **InfraNodus 효용의 사내 친화 자체완결 대응** — 외부 SaaS·계정·프록시 통과 불필요. 그래프 시각화의 핵심 효용을 그대로 흡수.
+- **캐릭터 자산 동봉** (v1.4.1 적용 예정) — `graph/assets/characters/` 에 코부장(곰, Claude) / 오과장(개구리, Codex) / 젬대리(고양이, Gemini) SVG + 프로필. 다음 사이클에서 빌보드 sprite 로 그래프 씬에 합류.
+- v1.3 의 키트 우선·씨드 폴백 / 씨드 자체의 절 단위 진화는 그대로.
 
-모든 스크립트 실행 테스트 통과 (self-compare / 디프 시나리오 / apply 머지 / export-branch). 다음: 실제 사내 한 사이클(브랜치 송수신·리브랜드 + 씨드 업그레이드 한 번) 피드백. 진행: [`PLAN.md`](./PLAN.md) (v0.9).
+모든 스크립트 실행 테스트 통과 (v1.3 공유 워크플로우 + v1.4 3D 그래프 정적 검증 15/15). 다음: 실제 사내 한 사이클(브랜치 송수신·리브랜드 + 3D 그래프 띄우기) 피드백 → v1.4.1 캐릭터 sprite. 진행: [`PLAN.md`](./PLAN.md) (v0.10). 메모: [`docs/llm-wiki-evolution.md`](./docs/llm-wiki-evolution.md) (LLM Wiki 보완 4대 방법론).

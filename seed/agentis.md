@@ -1,7 +1,7 @@
 <!--
   ╔══════════════════════════════════════════════════════════════════╗
-  ║  Agentis — The Seed (v1.3)                                        ║
-  ║  seed-version: 1.3                                                ║
+  ║  Agentis — The Seed (v1.4)                                        ║
+  ║  seed-version: 1.4                                                ║
   ║  이 파일 하나가 "씨드(seed)"입니다. Cline 워크스페이스 룰로 넣으세요. ║
   ║  설치: 작업 폴더에  .clinerules  파일로 이 내용을 그대로 붙여넣기  ║
   ║       (또는  .clinerules/agentis.md  로 저장)                      ║
@@ -52,7 +52,9 @@
 - 키트 파일이 자리에 있는가:
   - `agentis/workflows/` 안에 `브랜치-내보내기.py`, `팩-병합.py`, `브랜치-비교.py`, `메인-동기화.py`, `씨드-업그레이드.py`
   - `agentis/graph/` 안에 `build_graph.py`, `agent-stats.py`
-- 키트 마커 파일 `agentis/.kit-version` (한 줄: 예 `seed:1.3 / kit:1.3`)
+  - `agentis/graph/vendor/` 안에 `three.min.js`, `3d-force-graph.min.js` (v1.4부터 — 3D 그래프 빌더가 인라인하는 라이브러리)
+  - `agentis/graph/assets/characters/` (v1.4부터 동봉, v1.4.1 적용 예정) — 코부장/오과장/젬대리 SVG
+- 키트 마커 파일 `agentis/.kit-version` (한 줄: 예 `seed:1.4 / kit:1.4`)
 
 **누락 / 손상 시 처리**:
 1. 작업 폴더 옆에 키트 원본이 있나 본다 (예: `kit/agentis-template/` 가 같이 깔린 경우) → 있으면 누락 파일만 복사.
@@ -202,12 +204,14 @@ agentis/
 ---
 
 <!-- @section: 4 -->
-## 4. 그래프 ("쌓이는 게 보인다")
+## 4. 그래프 ("쌓이는 게 보인다") — v1.4 부터 3D
 
-`agentis/memory/` 의 마크다운들(특히 `[[링크]]`)을 노드/엣지로 만들어 Obsidian 그래프 뷰처럼 보여준다.
+`agentis/memory/` 의 마크다운들(특히 `[[링크]]`)을 노드/엣지로 만들어 Obsidian 그래프 뷰처럼 보여준다. **v1.4 부터는 3D**.
 
-- **방법 A (기본 — 항상 됨)**: `agentis/graph/build_graph.py` 가 `memory/**/*.md` 를 훑어 `[[..]]` 링크를 추출 → `graph/graph.json`(노드=페이지, 엣지=링크, 카테고리=폴더) → `graph/index.html`(D3 force-directed, 다크 테마, 카테고리별 색, 허브 노드 강조). 사용자는 `graph/index.html` 을 브라우저로 연다. (이 스크립트가 없으면 §0-1 자가점검 흐름으로.)
-- **방법 B (가능하면 — 더 풍부)**: graphify(Python)를 쓸 수 있으면 `memory/` 를 graphify에 먹여 의미관계까지 추출하고 커뮤니티 클러스터링·중심 노드 강조를 얻는다. 설치는 사용자에게 확인하고. 안 되면 방법 A로.
+- **방법 A (기본 — 항상 됨)**: `agentis/graph/build_graph.py` 가 `memory/**/*.md` 를 훑어 `[[..]]` 링크를 추출 → `graph/graph.json` + **`graph/graph.html` (3D, Three.js + 3d-force-graph 인라인)**. 자체완결: 외부 CDN/npm 없이 한 HTML 1.3MB. 사내망/오프라인 OK.
+- **VS Code 안에서 띄우기 (권장)**: 명령 팔레트 `Ctrl+Shift+P` → `Simple Browser: Show` → 파일 경로 또는 `file:///.../graph.html`. 코드 작업과 그래프가 양쪽 탭으로 공존. 또는 `python build_graph.py --open` 으로 외부 브라우저.
+- **방법 B (선택)**: graphify(Python)를 쓸 수 있으면 `memory/` 를 graphify에 먹여 의미관계·커뮤니티 클러스터링까지 받을 수 있다. 설치는 사용자에게 확인. 안 되면 방법 A로.
+- **vendor 가 없을 때**: §0-1 자가점검이 잡는다. 키트에서 `graph/vendor/three.min.js` + `3d-force-graph.min.js` 를 받아오게 안내. degraded 모드에서는 2D 폴백 HTML 을 임시 생성하는 옵션도 있다 (`# agentis-kit: improvised` 헤더).
 - 첫 부팅 직후에도 한 번 만들어 둔다 (노드 몇 개라도). 작을 때부터 자라는 게 보여야 한다.
 
 ---
@@ -362,4 +366,4 @@ python agentis/workflows/씨드-업그레이드.py --export-branch
 
 ---
 
-*Agentis Seed v1.3. 씨드 → 브랜치 → 메인 (두 층 모두). 이 문서와 `agentis/` 운영 규약은 사용자와 함께 계속 다듬어 간다.*
+*Agentis Seed v1.4. 씨드 → 브랜치 → 메인 (두 층 모두). 3D 두뇌 그래프 (자체완결). 이 문서와 `agentis/` 운영 규약은 사용자와 함께 계속 다듬어 간다.*

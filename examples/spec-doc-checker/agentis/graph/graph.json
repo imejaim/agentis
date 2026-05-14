@@ -412,7 +412,7 @@
       "label": "(소스) 2026-05-10 인증기관 제출문서 목록 v2"
     },
     {
-      "category": "_other",
+      "category": "core",
       "deg": 0,
       "id": "memory/stats",
       "label": "🧬 규격이 — Character Sheet"
@@ -450,6 +450,12 @@
     {
       "category": "workflows",
       "deg": 0,
+      "id": "workflows/씨드-업그레이드",
+      "label": "씨드 업그레이드 (씨드 자체의 공유와 진화)"
+    },
+    {
+      "category": "workflows",
+      "deg": 0,
       "id": "workflows/팩-병합",
       "label": "팩 병합 (다른 에이전트의 역량만 가져오기)"
     }
@@ -457,16 +463,15 @@
   "stats": {
     "broken_links": 0,
     "by_category": {
-      "_other": 1,
       "concepts": 3,
-      "core": 5,
+      "core": 6,
       "entities": 3,
       "skills": 1,
       "sources": 2,
-      "workflows": 5
+      "workflows": 6
     },
     "edges": 75,
-    "nodes": 20,
-    "orphans": 5
+    "nodes": 21,
+    "orphans": 6
   }
 }
