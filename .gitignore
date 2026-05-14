@@ -23,3 +23,4 @@ kit/agentis-template/graph/graph.html
 kit/agentis-template/graph/graph.json
 __pycache__/
 *.pyc
+_dist/
