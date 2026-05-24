@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-build-html.py — Agentis 씨드(agentis.md)를 깔끔한 단일 HTML 로 변환한다.
+build-html.py — Agentis 씨드(seed/agentis.md)를 단일 HTML 로 변환해
+  .clinerules/agentis.html (Cline 이 읽는 LIVE 룰) 로 내보낸다.
 
-  python seed/build-html.py              # seed/agentis.md -> seed/agentis.html
+  python seed/build-html.py              # seed/agentis.md -> .clinerules/agentis.html
   python seed/build-html.py IN OUT       # 입력/출력 경로 직접 지정
 
 특징
   - 외부 의존성 없음 (Python 표준 라이브러리만). 사내망/오프라인 OK.
   - 결정론적: 같은 씨드 -> 같은 HTML. 씨드가 바뀌면 다시 실행하면 된다.
-  - 하얀 바탕 + 최소한의 깔끔한 스타일. (화려한 디자인은 별도 레퍼런스 작업에서.)
+  - 에디토리얼 톤 + 다크/라이트 토글 + 사이드바 sticky TOC + 키네틱 타이포.
 """
 import sys
 import re
@@ -816,7 +817,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 def main():
     here = Path(__file__).resolve().parent
     src = Path(sys.argv[1]) if len(sys.argv) > 1 else here / 'agentis.md'
-    dst = Path(sys.argv[2]) if len(sys.argv) > 2 else here / 'agentis.html'
+    # 기본 출력은 .clinerules/agentis.html (Cline 이 읽는 LIVE 룰) — 레포 루트 기준
+    dst = Path(sys.argv[2]) if len(sys.argv) > 2 else here.parent / '.clinerules' / 'agentis.html'
 
     md = src.read_text(encoding='utf-8').lstrip('﻿')
     lines = md.split('\n')
@@ -850,6 +852,7 @@ def main():
            .replace('{{TOC}}', toc_html or '')
            .replace('{{BODY}}', body))
 
+    dst.parent.mkdir(parents=True, exist_ok=True)
     dst.write_text(out, encoding='utf-8')
 
     print('OK  ->', dst)
