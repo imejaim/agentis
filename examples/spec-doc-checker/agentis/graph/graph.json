@@ -1,5 +1,27 @@
 {
-  "broken": [],
+  "active_node": "memory/entities/시험성적서",
+  "broken": [
+    [
+      "memory/_brain/holonomic",
+      ".."
+    ],
+    [
+      "workflows/memory-lint",
+      "X"
+    ],
+    [
+      "workflows/memory-lint",
+      "기준페이지"
+    ],
+    [
+      "workflows/skill-도태",
+      "skills/..."
+    ],
+    [
+      "workflows/skill-도태",
+      "skills/<이름>"
+    ]
+  ],
   "categories": {
     "_other": {
       "color": "#888888",
@@ -29,6 +51,10 @@
       "color": "#c0c0c0",
       "label": "WORKFLOWS"
     }
+  },
+  "character": {
+    "applied": true,
+    "name": "코부장"
   },
   "edges": [
     {
@@ -316,6 +342,10 @@
       "target": "memory/hot"
     },
     {
+      "source": "workflows/skill-도태",
+      "target": "memory/log"
+    },
+    {
       "source": "workflows/시험성적서-항목추출",
       "target": "memory/concepts/시험성적서-항목-스키마"
     },
@@ -338,6 +368,12 @@
       "deg": 2,
       "id": "agent",
       "label": "규격이"
+    },
+    {
+      "category": "_other",
+      "deg": 0,
+      "id": "memory/_brain/holonomic",
+      "label": "홀로노믹 브레인 — Agentis 식 적용 (컨셉 노트)"
     },
     {
       "category": "core",
@@ -389,7 +425,7 @@
     },
     {
       "category": "core",
-      "deg": 12,
+      "deg": 13,
       "id": "memory/log",
       "label": "로그"
     },
@@ -422,6 +458,18 @@
       "deg": 9,
       "id": "skills/checklist-대조",
       "label": "체크리스트 대조"
+    },
+    {
+      "category": "workflows",
+      "deg": 0,
+      "id": "workflows/memory-lint",
+      "label": "메모리 lint"
+    },
+    {
+      "category": "workflows",
+      "deg": 1,
+      "id": "workflows/skill-도태",
+      "label": "자가 도태 (씨드 §3-7)"
     },
     {
       "category": "workflows",
@@ -461,17 +509,18 @@
     }
   ],
   "stats": {
-    "broken_links": 0,
+    "broken_links": 8,
     "by_category": {
+      "_other": 1,
       "concepts": 3,
       "core": 6,
       "entities": 3,
       "skills": 1,
       "sources": 2,
-      "workflows": 6
+      "workflows": 8
     },
-    "edges": 75,
-    "nodes": 21,
-    "orphans": 6
+    "edges": 76,
+    "nodes": 24,
+    "orphans": 8
   }
 }

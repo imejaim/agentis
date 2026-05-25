@@ -3,6 +3,29 @@
 > 사내 **VS Code + cline SR** 환경에서, **워크스페이스 룰 파일 하나**로 부팅되는 **업무처리 에이전트 키트**.
 > 카오스 → 유니버스. 쓰는 사람도 크고, 에이전트도 큰다.
 
+## 잠깐 — 만들지 마세요
+
+Cline 을 "코딩 에이전트"로만 알고 계셨다면, 업무 자동화 에이전트를 쓰려고 이런 걸 만들려 하실 수 있습니다:
+
+- ❌ 백엔드 API 서버 (FastAPI / Express) + LLM 호출 래퍼
+- ❌ 채팅 서비스 UI (React + WebSocket)
+- ❌ 에이전트 SDK + 자체 호스팅
+- ❌ Docker / 클라우드 배포
+
+**전부 필요 없습니다.** 배보다 배꼽이 커집니다.
+
+VS Code + Cline (사내 cline SR) 이 이미 에이전트 호스트입니다.
+이 레포의 **씨드(`seed/agentis.md`) 한 파일**을 작업 폴더의 `.clinerules/agentis.md` 로 복붙하고 "안녕" 만 하면, 그게 당신의 업무처리 에이전트가 깨어나는 순간입니다.
+
+## 3분 셋업 (정말로)
+
+1. 작업 폴더에 `.clinerules/` 폴더 만들기 (이미 있으면 패스)
+2. 이 레포의 `seed/agentis.md` 내용을 `.clinerules/agentis.md` 로 그대로 복사
+3. 더 갖춰서 시작하려면 `kit/agentis-template/` 폴더를 작업 폴더에 `agentis/` 라는 이름으로 통째로 복사 (선택)
+4. Cline 대화창에 **`안녕`**
+
+끝. 이제 에이전트가 자기 이름을 짓고, 짧은 인터뷰 후 (원하면 딥인터뷰), 사용법을 안내합니다.
+
 ## 이게 뭔가요
 
 Agentis는 "에이전트를 만드는 에이전트 환경"입니다. 동료가 자기 작업 폴더에 씨앗 파일 하나 넣고 클라인에게 **"안녕"** 한 마디만 하면:
@@ -65,6 +88,16 @@ Agentis는 "에이전트를 만드는 에이전트 환경"입니다. 동료가 �
 - [graphify](https://graphify.net/) ([safishamsi/graphify](https://github.com/safishamsi/graphify)) — 지식 그래프 시각화 ("두뇌")
 - [Karpathy — LLM Wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f) — LLM이 직접 유지보수하는 지식베이스
 - [지식 그래프 실사용기 (brunch)](https://brunch.co.kr/@abrahamsong/164)
+
+## 공유 = 브랜치 (패키지) 만들기
+
+성장한 에이전트를 동료에게 넘기려면 **API 배포 X**, **브랜치(패키지) 파일 전달 ✅** 입니다.
+
+- 사용자가 "내 에이전트 다른 동료에게 넘기고 싶어"라고 하면 에이전트가 직접 `agentis/workflows/브랜치-내보내기.py` 를 돌려 zip 한 폴더를 만듭니다.
+- 동료는 그 폴더를 자기 작업 폴더 옆에 놓고 Cline 에게 `안녕` → 자동으로 리브랜드 모드로 받습니다.
+- 사내 깃 (GitHub Enterprise / GitLab / Gitea / 단순 폴더 미러) 가 있으면 `agent.md` 의 `main_repo:` 필드에 URL 박고, 에이전트 레벨이 5 이상일 때 자동 푸시 옵션도 활성화됩니다 (자세한 건 §5).
+
+자세한 흐름과 명령어는 아래 "에이전트 공유 — 씨드 → 브랜치 → 메인" 섹션을, 사내 깃 배포 전략은 [`docs/배포-사내깃허브.md`](./docs/배포-사내깃허브.md) 를 참고하세요.
 
 ## 에이전트 공유 — 씨드 → 브랜치 → 메인
 
@@ -148,3 +181,5 @@ python agentis/graph/agent-stats.py
 - v1.3 의 키트 우선·씨드 폴백 / 씨드 자체의 절 단위 진화는 그대로.
 
 모든 스크립트 실행 테스트 통과 (v1.3 공유 워크플로우 + v1.4 3D 그래프 정적 검증 15/15). 다음: 실제 사내 한 사이클(브랜치 송수신·리브랜드 + 3D 그래프 띄우기) 피드백 → v1.4.1 캐릭터 sprite. 진행: [`PLAN.md`](./PLAN.md) (v0.10). 메모: [`docs/llm-wiki-evolution.md`](./docs/llm-wiki-evolution.md) (LLM Wiki 보완 4대 방법론).
+
+**v1.5 진행 중** — 딥인터뷰 분기, Hermes 자기진화 보강, Graph RAG + SQLite 인덱스, 업무 다이어그램, 캐릭터 빌보드 적용.

@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-build-html.py — Agentis 씨드(seed/agentis.md)를 단일 HTML 로 변환해
-  .clinerules/agentis.html (Cline 이 읽는 LIVE 룰) 로 내보낸다.
+build-html.py — Agentis 씨드(seed/agentis.md)를 단일 HTML 뷰어로 변환해
+  docs/agentis-view.html 로 내보낸다. (Cline 룰 토큰 절약을 위해 LIVE 룰은
+  .clinerules/agentis.md 마크다운을 쓰고, HTML 은 사람이 읽는 뷰어 전용이다.)
 
-  python seed/build-html.py              # seed/agentis.md -> .clinerules/agentis.html
+  python seed/build-html.py              # seed/agentis.md -> docs/agentis-view.html
   python seed/build-html.py IN OUT       # 입력/출력 경로 직접 지정
 
 특징
@@ -817,8 +818,8 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 def main():
     here = Path(__file__).resolve().parent
     src = Path(sys.argv[1]) if len(sys.argv) > 1 else here / 'agentis.md'
-    # 기본 출력은 .clinerules/agentis.html (Cline 이 읽는 LIVE 룰) — 레포 루트 기준
-    dst = Path(sys.argv[2]) if len(sys.argv) > 2 else here.parent / '.clinerules' / 'agentis.html'
+    # 기본 출력은 docs/agentis-view.html (사람이 읽는 뷰어). Cline 룰은 .clinerules/agentis.md 마크다운.
+    dst = Path(sys.argv[2]) if len(sys.argv) > 2 else here.parent / 'docs' / 'agentis-view.html'
 
     md = src.read_text(encoding='utf-8').lstrip('﻿')
     lines = md.split('\n')

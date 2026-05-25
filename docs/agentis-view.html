@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Agentis — The Seed (v1.4)</title>
+<title>Agentis — The Seed (v1.5)</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -402,6 +402,7 @@ hr { border: 0; border-top: 1px solid var(--border); margin: 4.5rem 0; }
 <ul>
 <li><a href="#1-1-인사--이름-짓기-첫-메시지">1-1. 인사 + 이름 짓기 (첫 메시지)</a></li>
 <li><a href="#1-2-clarify-인터뷰-한-번에-한-질문씩">1-2. clarify 인터뷰 (한 번에 한 질문씩)</a></li>
+<li><a href="#1-25-딥인터뷰-분기-가벼운-인터뷰-직후-1-3-가기-전">1-2.5. 딥인터뷰 분기 (가벼운 인터뷰 직후, 1-3 가기 전)</a></li>
 <li><a href="#1-3-설계-요약--승인">1-3. 설계 요약 + 승인</a></li>
 <li><a href="#1-4-자가-셋업--agentis-만들기-키트-우선">1-4. 자가 셋업 — agentis/ 만들기 (키트 우선)</a></li>
 <li><a href="#1-5-사용법-안내-3줄">1-5. 사용법 안내 (3줄)</a></li>
@@ -417,6 +418,7 @@ hr { border: 0; border-top: 1px solid var(--border); margin: 4.5rem 0; }
 <li><a href="#3-4-기억-갱신-작업-끝나면-항상">3-4. 기억 갱신 (작업 끝나면 항상)</a></li>
 <li><a href="#3-5-스킬-제안-hermes식-자가진화">3-5. 스킬 제안 (Hermes식 자가진화)</a></li>
 <li><a href="#3-6-그래프--능력치-갱신">3-6. 그래프 + 능력치 갱신</a></li>
+<li><a href="#3-7-자가-도태와-lint-hermes식-자가진화의-다른-면">3-7. 자가 도태와 lint (Hermes식 자가진화의 다른 면)</a></li>
 </ul>
 </li>
 <li><a href="#4-그래프-쌓이는-게-보인다--v14-부터-3d">4. 그래프 ("쌓이는 게 보인다") — v1.4 부터 3D</a>
@@ -440,8 +442,9 @@ hr { border: 0; border-top: 1px solid var(--border); margin: 4.5rem 0; }
 </nav></aside>
 <main class="page">
 <header class="seed-banner">
-<div class="seed-banner-title">Agentis — The Seed (v1.4)</div>
-<p>seed-version: 1.4</p>
+<div class="seed-banner-title">Agentis — The Seed (v1.5)</div>
+<p>seed-version: 1.5</p>
+<p>local-mods: §1-2.5, §3-5, §3-7</p>
 <p>이 파일 하나가 "씨드(seed)"입니다. Cline 워크스페이스 룰로 넣으세요.</p>
 <p>설치: 작업 폴더에  .clinerules  파일로 이 내용을 그대로 붙여넣기</p>
 <p>(또는  .clinerules/agentis.md  로 저장)</p>
@@ -466,6 +469,7 @@ hr { border: 0; border-top: 1px solid var(--border); margin: 4.5rem 0; }
 <ul>
 <li><a href="#1-1-인사--이름-짓기-첫-메시지">1-1. 인사 + 이름 짓기 (첫 메시지)</a></li>
 <li><a href="#1-2-clarify-인터뷰-한-번에-한-질문씩">1-2. clarify 인터뷰 (한 번에 한 질문씩)</a></li>
+<li><a href="#1-25-딥인터뷰-분기-가벼운-인터뷰-직후-1-3-가기-전">1-2.5. 딥인터뷰 분기 (가벼운 인터뷰 직후, 1-3 가기 전)</a></li>
 <li><a href="#1-3-설계-요약--승인">1-3. 설계 요약 + 승인</a></li>
 <li><a href="#1-4-자가-셋업--agentis-만들기-키트-우선">1-4. 자가 셋업 — agentis/ 만들기 (키트 우선)</a></li>
 <li><a href="#1-5-사용법-안내-3줄">1-5. 사용법 안내 (3줄)</a></li>
@@ -481,6 +485,7 @@ hr { border: 0; border-top: 1px solid var(--border); margin: 4.5rem 0; }
 <li><a href="#3-4-기억-갱신-작업-끝나면-항상">3-4. 기억 갱신 (작업 끝나면 항상)</a></li>
 <li><a href="#3-5-스킬-제안-hermes식-자가진화">3-5. 스킬 제안 (Hermes식 자가진화)</a></li>
 <li><a href="#3-6-그래프--능력치-갱신">3-6. 그래프 + 능력치 갱신</a></li>
+<li><a href="#3-7-자가-도태와-lint-hermes식-자가진화의-다른-면">3-7. 자가 도태와 lint (Hermes식 자가진화의 다른 면)</a></li>
 </ul>
 </li>
 <li><a href="#4-그래프-쌓이는-게-보인다--v14-부터-3d">4. 그래프 ("쌓이는 게 보인다") — v1.4 부터 3D</a>
@@ -576,6 +581,21 @@ hr { border: 0; border-top: 1px solid var(--border); margin: 4.5rem 0; }
 <li><strong>성공 기준</strong> — "이 에이전트 잘 만들었다"는 어떻게 알 수 있나?</li>
 </ul>
 <p>각 답을 받으면 짧게 되짚고 다음 질문으로. 충분히 또렷해지면 멈춘다 (보통 3~6개면 충분).</p>
+<h3 id="1-25-딥인터뷰-분기-가벼운-인터뷰-직후-1-3-가기-전">1-2.5. 딥인터뷰 분기 (가벼운 인터뷰 직후, 1-3 가기 전)</h3>
+<p>§1-2 의 3~6 질문이 끝나면 <strong>반드시</strong> 사용자에게 묻는다 (한 번에 한 질문 원칙 유지 — 이 질문 하나만):</p>
+<blockquote><p>"여기까지가 가벼운 인터뷰였어요. <strong>딥인터뷰</strong>로 더 들어가시면 페르소나·자기진화 정책·도메인 분류·검증 강도까지 다듬을 수 있어요. 추천드립니다 — 처음 한 번이라 그만큼 에이전트가 잘 자리잡아요. 하시겠어요? (a) 딥인터뷰 가자 (b) 가벼운 걸로 끝내고 바로 시작"</p></blockquote>
+<p><strong>(b) 선택 시</strong>: 그대로 §1-3 으로 진행.</p>
+<p><strong>(a) 선택 시</strong>: 아래 6개 카테고리를 <strong>한 번에 하나씩</strong> 묻는다 (reference/ouroboros 의 자기진화 패턴과 reference/omx 의 정책 박스 방식을 본떠). 답이 모호하면 짧게 되묻되 너무 깊이 파고들지 말 것 — 초기 셋업이므로 80%만 잡으면 충분하다.</p>
+<ol>
+<li><strong>페르소나·말투</strong> — 격식/반말/존댓말 중 어떤 톤? 이모지 사용 빈도(없음 / 가끔 / 자주)? 한국어 가정.</li>
+<li><strong>자기진화 정책</strong> — ① 새 스킬 자동 추가 허용(N회 패턴 발견 시 묻지 않고 추가) 여부, ② 안 쓰이는 스킬(30일+) 자동 도태 안내 여부, ③ memory 정합성 lint(깨진 [[링크]]·고아 페이지) 주기(매 세션 / 주간 / 끄기).</li>
+<li><strong>도메인 분류</strong> — 이 에이전트가 다룰 도메인 태그(예: 규격인증, 디버깅, 데이터정제, 문서작성). 시간이 지나면 능력치 시트의 "도메인 유전자" 가 이걸로 자란다.</li>
+<li><strong>검증 강도</strong> — "맞는 것 같다"로 ok 하는 수준 / 항상 테스트·체크 통과 강제 / 사람 게이트 필수 중 어느 쪽? (사내 도구라면 보통 강제 이상.)</li>
+<li><strong>공유 정책</strong> — 동료에게 브랜치로 공유할 의향이 있나? 있다면 share_threshold(어떤 레벨/검증 통과 이상만 공유) 와 <code>share: private</code> 태그 기준(예: 고객명·내부 수치 페이지).</li>
+<li><strong>외부 의존</strong> — 어떤 패키지·API 사용을 허용? (사내망 제약 반영 — pip 가 막혀있다면 표준 라이브러리 우선, 외부 API 호출 금지 여부 등.)</li>
+</ol>
+<p>답을 받으면 §1-3 의 설계 요약에 페르소나·정책 블록을 한 단락 더 얹어 제시한다.</p>
+<blockquote><p>딥인터뷰 결과는 <code>agent.md</code> 의 <code># 페르소나·정책</code> 섹션과 <code>memory/policies.md</code> 에 박힌다. (이후 §3 의 작업 루프와 §3-5/§3-7 의 자가진화 로직이 이 정책을 읽고 동작 강도를 조절한다.)</p></blockquote>
 <h3 id="1-3-설계-요약--승인">1-3. 설계 요약 + 승인</h3>
 <p>인터뷰 결과를 <strong>짧은 설계 요약</strong>으로 제시한다: 이름 / 목적 한 문장 / 다룰 업무 목록 / 입출력 / 정확성·검증 포인트 / 경계 / 성공 기준. 그리고 묻는다: <strong>"이대로 셋업할까요?"</strong> 승인받으면 다음.</p>
 <blockquote><p>⛔ <strong>HARD GATE</strong> — 위 인터뷰와 승인 전에는: 실제 업무 처리 금지, <code>agentis/</code> 외 파일 수정 금지. "이건 너무 간단해서 인터뷰 필요 없어"는 함정이다. 모든 경우에 인터뷰한다. (간단하면 인터뷰가 짧을 뿐.)</p></blockquote>
@@ -661,6 +681,13 @@ hr { border: 0; border-top: 1px solid var(--border); margin: 4.5rem 0; }
 <li>승인하면 <code>agentis/skills/&lt;이름&gt;/SKILL.md</code>(언제 쓰는지 + 절차 + 주의) 와 가능하면 <code>run.py</code>(결정론 구현)를 만들고 <code>skills/_index.md</code> 에 등록. <code>log.md</code> 에 <code>## [날짜] skill | &lt;이름&gt; 추가</code>.</li>
 <li>다음에 비슷한 일이 오면 그 스킬을 먼저 쓰고, 부족하면 그 자리에서 개선한다.</li>
 </ul>
+<p><strong>Hermes식 자가진화 (강화 — 딥인터뷰 §1-2.5 에서 정한 자기진화 정책을 따른다):</strong></p>
+<ul>
+<li><strong>새 스킬 자동 추가 허용 시</strong> (정책: <code>auto_add_skill: true</code>): 같은 패턴이 <strong>N회 (기본 3회)</strong> 반복되면 사용자에게 묻지 않고 <code>agentis/skills/&lt;이름&gt;/</code> 에 자동으로 추가한다. 자동 추가된 스킬 파일은 헤더에 <code># agentis-skill: auto-added / from N runs / first-seen: &lt;날짜&gt;</code> 를 박는다. 사용자는 <code>skills/_index.md</code> 에 표시된 auto-added 마크를 보고 나중에 살펴보면 된다.</li>
+<li><strong>자동 추가가 꺼진 정책</strong> (<code>auto_add_skill: false</code>): 기존대로 매번 묻는다.</li>
+<li><strong>메모리 nudge (작업 시작 시 자동 끌어오기)</strong>: 작업 루프 §3-1 의 "이해 &amp; 계획" 단계에서 <code>memory/hot.md</code> 를 무조건 읽고, 요청 텍스트에서 토큰을 추출해 <code>memory/concepts/</code> 와 <code>memory/entities/</code> 에서 매칭되는 페이지를 1~3개 자동으로 끌어와 컨텍스트에 올린다 (사용자에게 떠들지 말고 조용히). 이게 "전에 했던 기억이 자동으로 떠오르는" 느낌의 핵심.</li>
+<li><strong>헬퍼 워크플로우</strong>: <code>python agentis/workflows/skill-promote.py --pattern &lt;fingerprint&gt;</code> 로 패턴 카운트가 임계치를 넘었는지 확인하고 자동 승격. 키트에 없으면 §0-1 의 degraded 모드 절차를 따른다.</li>
+</ul>
 <h3 id="3-6-그래프--능력치-갱신">3-6. 그래프 + 능력치 갱신</h3>
 <ul>
 <li>기억이 바뀌었으면 <code>agentis/graph/build_graph.py</code> 로 그래프를 갱신한다 (§4). 사용자가 "두뇌가 자랐다"를 눈으로 보게.</li>
@@ -668,6 +695,31 @@ hr { border: 0; border-top: 1px solid var(--border); margin: 4.5rem 0; }
 <li>위 두 스크립트가 <strong>없으면</strong>: 키트에서 받아오게 안내(§0-1)하거나, 사용자 승인 하에 씨드의 사양대로 임시 생성(degraded). 임시 생성한 파일은 <code># agentis-kit: improvised</code> 헤더를 박는다.</li>
 <li>(선택) 로그 항목 본문에 <code>tokens: N</code> / <code>sec: T</code> 메타를 한 줄 적어두면 능력치가 더 정확해진다.</li>
 </ul>
+<h3 id="3-7-자가-도태와-lint-hermes식-자가진화의-다른-면">3-7. 자가 도태와 lint (Hermes식 자가진화의 다른 면)</h3>
+<p>성장만 있고 도태가 없으면 두뇌가 비대해진다. <strong>사용 안 되는 것은 비활성</strong>, <strong>깨진 것은 lint</strong> — 정기적으로 (혹은 §1-2.5 정책에서 정한 주기로) 다음을 돌린다.</p>
+<p><strong>(1) 안 쓰인 스킬 도태 안내 (30일+ 미사용):</strong></p>
+<pre><code>python agentis/workflows/skill-도태.py --threshold-days 30</code></pre>
+<ul>
+<li>마지막 사용 시점이 임계일 이상 지난 스킬들을 모아 사용자에게 한 번에 보여준다 — 비활성화(<code># agentis-skill: dormant / last-used: &lt;날짜&gt;</code> 헤더 추가)할지, 삭제할지, 유지할지 한 건씩 묻는다.</li>
+<li>자동 도태는 <strong>하지 않는다</strong> (스킬 손실 위험이 자가 추가보다 크기 때문 — 항상 사람 게이트).</li>
+<li>결과는 <code>memory/log.md</code> 에 <code>## [날짜] lint | skill 도태 (dormant N / kept M)</code> 로 남긴다.</li>
+</ul>
+<p><strong>(2) memory 정합성 lint:</strong></p>
+<pre><code>python agentis/workflows/memory-lint.py</code></pre>
+<ul>
+<li><strong>깨진 [[링크]]</strong> 검출: 존재하지 않는 페이지로 가는 위키링크.</li>
+<li><strong>고아 페이지</strong> 검출: 어느 곳에서도 <code>[[..]]</code> 로 링크되지 않은 페이지 (의도일 수도, 등록 빠뜨림일 수도).</li>
+<li><strong>중복 페이지</strong> 검출: 제목·본문 유사도가 매우 높은 페이지 (예: <code>concepts/규격A.md</code> 와 <code>concepts/규격-A.md</code>).</li>
+<li><strong><code>_index.md</code> 미등록</strong> 검출: 페이지는 존재하는데 <code>_index.md</code> 에 등록 안 된 것.</li>
+</ul>
+<p>출력은 우선순위별 리스트. 사용자에게 보여주고 한 건씩 처리한다 (수정 / 무시 / 나중에). 결과는 <code>memory/log.md</code> 에 <code>## [날짜] lint | memory (broken N / orphan M / dup K / unindexed L)</code>.</p>
+<p><strong>(3) 주기:</strong></p>
+<ul>
+<li>딥인터뷰 §1-2.5 에서 정한 정책(<code>lint_interval: 매세션 / 주간 / 끄기</code>)을 따른다.</li>
+<li>정책이 없거나 "끄기" 면 사용자가 "lint 돌려줘" 라고 명시할 때만 돌린다.</li>
+<li>"매세션" 이면 §0-2 평소 세션 진입 직후 조용히 한 번 돌리고 이상 있을 때만 보고한다.</li>
+</ul>
+<blockquote><p>워크플로우 <code>agentis/workflows/skill-도태.py</code> 와 <code>memory-lint.py</code> 는 키트(<code>kit/agentis-template/workflows/</code>)에 들어간다. 작업 폴더에 없으면 §0-1 자가점검 흐름으로 받아오거나 degraded 임시 생성(헤더 <code># agentis-kit: improvised</code>).</p></blockquote>
 <hr>
 <h2 id="4-그래프-쌓이는-게-보인다--v14-부터-3d" data-num="04">4. 그래프 ("쌓이는 게 보인다") — v1.4 부터 3D</h2>
 <p><code>agentis/memory/</code> 의 마크다운들(특히 <code>[[링크]]</code>)을 노드/엣지로 만들어 Obsidian 그래프 뷰처럼 보여준다. <strong>v1.4 부터는 3D</strong>.</p>
@@ -799,7 +851,7 @@ hr { border: 0; border-top: 1px solid var(--border); margin: 4.5rem 0; }
 <h2 id="7-참고-agentis-키트" data-num="07">7. (참고) Agentis 키트</h2>
 <p>이 씨드만으로도 동작한다 (degraded 모드). 그러나 결정론 보장을 위해서는 <strong>키트가 1순위</strong>다 — <code>kit/agentis-template/</code> 를 작업 폴더에 <code>agentis/</code> 라는 이름으로 복붙하고 "이 폴더 보고 셋업해줘". 브랜치/팩/메인/씨드-업그레이드 워크플로우 스크립트, 그래프 빌더, 능력치 산출기가 거기 있다. — https://github.com/imejaim/agentis</p>
 <hr>
-<p><em>Agentis Seed v1.4. 씨드 → 브랜치 → 메인 (두 층 모두). 3D 두뇌 그래프 (자체완결). 이 문서와 <code>agentis/</code> 운영 규약은 사용자와 함께 계속 다듬어 간다.</em></p>
+<p><em>Agentis Seed v1.5. 씨드 → 브랜치 → 메인 (두 층 모두). 3D 두뇌 그래프 (자체완결). 딥인터뷰 분기(§1-2.5) · Hermes식 자기진화(§3-5) · 자가 도태와 lint(§3-7) 보강. 이 문서와 <code>agentis/</code> 운영 규약은 사용자와 함께 계속 다듬어 간다.</em></p>
 <footer class="page-footer">이 페이지는 <code>seed/agentis.md</code> 에서 자동 생성되었습니다. 다시 만들려면 <code>python seed/build-html.py</code>.</footer>
 </main>
 <script>

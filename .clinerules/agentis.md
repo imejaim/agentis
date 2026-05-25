@@ -403,8 +403,6 @@ python agentis/workflows/씨드-업그레이드.py --export-branch
 
 **메인 큐레이션**(여러 사람 브랜치를 모아 메인 갱신)은 관리자 역할: `agentis/workflows/브랜치-비교.py <A> <B>` 로 디프 보고서를 받아 사람이 결정하고 메인 레포에 직접 커밋. 본격 워크플로우는 사내 사용자 수가 늘면 그때 다듬는다.
 
-Level >= 5 도달 시 자동 안내: `workflows/사내깃-올리기.py --auto`. 사용자가 `--init` 으로 첫 푸시 절차 시작 가능.
-
 ### 5-7. 워크플로우 스크립트가 작업 폴더에 없을 때
 
 위 5개 스크립트(`브랜치-내보내기.py`, `팩-병합.py`, `브랜치-비교.py`, `메인-동기화.py`, `씨드-업그레이드.py`)는 키트(`kit/agentis-template/workflows/`)에 있다. 작업 폴더 `agentis/workflows/` 에 없으면 키트 레포에서 받아 복사해 넣고 진행한다. 받기 어려운 환경이면 §0-1 의 degraded 모드 절차로 씨드에서 임시 생성 (헤더에 `# agentis-kit: improvised` 박힘).
