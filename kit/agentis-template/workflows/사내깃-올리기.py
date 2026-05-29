@@ -293,7 +293,10 @@ def mode_init(root: Path) -> int:
         "[사내깃] 사내 깃 URL 을 입력하세요."
     )
     print(
-        f"         예: https://gitlab.company.com/team/{agent_name}.git"
+        f"         예: https://github.sec.samsung.net/<사용자명>/{agent_name} (삼성 사내 표준)"
+    )
+    print(
+        f"             또는 일반: https://gitlab.company.com/team/{agent_name}.git"
     )
     try:
         url = input("사내 깃 URL? ").strip()
@@ -311,7 +314,7 @@ def mode_init(root: Path) -> int:
             file=sys.stderr,
         )
         print(
-            "         유효한 형식 예시: https://gitlab.company.com/team/agent.git",
+            "         유효한 형식 예시: https://github.sec.samsung.net/<사용자명>/<에이전트이름> (삼성 사내 표준)",
             file=sys.stderr,
         )
         return 1

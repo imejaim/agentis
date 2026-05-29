@@ -1,50 +1,84 @@
 <!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><title>규격이 — 업무 흐름 (Agentis)</title>
+<html lang="ko"><head><meta charset="utf-8"><title>규격이 — 업무 흐름 (Agentis 스윔레인)</title>
 <style>
   html,body{margin:0;height:100%;background:#070a10;color:#cdd3da;font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;overflow:hidden}
   #wrap{position:fixed;inset:0}
   svg{width:100%;height:100%;display:block;background:#070a10;cursor:grab}
   svg.dragging{cursor:grabbing}
-  #hud{position:fixed;left:14px;top:12px;z-index:10;background:rgba(14,17,22,.82);border:1px solid #2a313c;border-radius:10px;padding:12px 14px;backdrop-filter:blur(6px);max-width:320px}
-  #hud h1{font-size:13px;margin:0 0 6px;color:#e7ecf2;letter-spacing:.04em;font-weight:600}
-  #hud .stat{color:#8b95a1;font-size:11px;margin-bottom:6px}
-  #legend{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:6px}
-  #legend span{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#9aa4af}
-  #legend i{width:9px;height:9px;border-radius:50%;display:inline-block}
-  #toggles{margin-top:10px;display:flex;flex-direction:column;gap:5px}
-  #toggles button{background:#1a2029;border:1px solid #2a313c;color:#cdd3da;padding:5px 9px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit}
+
+  /* 상단 헤더 한 줄 */
+  #topbar{position:fixed;left:0;right:0;top:0;height:36px;background:rgba(8,11,17,.95);border-bottom:1px solid #1a2029;display:flex;align-items:center;padding:0 16px;z-index:11;font-size:12px;color:#9aa4af;letter-spacing:.01em}
+  #topbar b{color:#e7ecf2;font-weight:600}
+  #topbar .sep{color:#3a414c;margin:0 10px}
+
+  /* 좌측 대시보드 — 주요 업무 카드 */
+  #dash{position:fixed;left:14px;top:50px;z-index:10;display:flex;flex-direction:column;gap:7px;max-width:280px}
+  .card{background:rgba(14,17,22,.86);border:1px solid #2a313c;border-left-width:4px;border-radius:8px;padding:9px 11px;backdrop-filter:blur(6px);transition:transform .12s,border-color .12s}
+  .card:hover{transform:translateX(2px);border-color:#7fd1ff}
+  .card .ttl{font-size:12px;font-weight:600;color:#e7ecf2;line-height:1.3;margin-bottom:3px}
+  .card .meta{font-size:10.5px;color:#7c8693;line-height:1.5}
+  .card .badge{display:inline-block;font-family:'JetBrains Mono',Consolas,monospace;font-size:9.5px;color:#0a0d12;padding:1px 6px;border-radius:3px;font-weight:600;margin-right:6px}
+  .card.aux{border-left-color:#6b7280;opacity:.66}
+  .card.aux .ttl{color:#9aa4af}
+
+  /* 토글 + 범례 */
+  #ctrls{position:fixed;right:14px;top:50px;z-index:10;background:rgba(14,17,22,.82);border:1px solid #2a313c;border-radius:10px;padding:10px 12px;backdrop-filter:blur(6px);max-width:260px}
+  #ctrls h2{font-size:11px;margin:0 0 6px;color:#9aa4af;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+  #legend{display:flex;flex-wrap:wrap;gap:5px 9px;margin-bottom:8px}
+  #legend span{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;color:#9aa4af}
+  #legend i{width:8px;height:8px;border-radius:50%;display:inline-block}
+  #toggles{display:flex;flex-direction:column;gap:4px}
+  #toggles button{background:#1a2029;border:1px solid #2a313c;color:#cdd3da;padding:4px 8px;border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit;text-align:left}
   #toggles button:hover{background:#222a35;border-color:#3a414c}
   #toggles button.active{background:#1f2d3a;border-color:#7fd1ff;color:#7fd1ff}
+
   #hint{position:fixed;right:14px;bottom:12px;color:#5b6470;font-size:11px;z-index:10;text-align:right}
   #brand{position:fixed;left:14px;bottom:12px;color:#3a414c;font-size:10px;z-index:10}
-  #info{position:fixed;right:14px;top:12px;z-index:10;background:rgba(14,17,22,.92);border:1px solid #2a313c;border-radius:10px;padding:14px 16px;backdrop-filter:blur(6px);max-width:380px;display:none;max-height:80vh;overflow:auto}
+  #info{position:fixed;right:14px;top:50px;z-index:12;background:rgba(14,17,22,.96);border:1px solid #2a313c;border-radius:10px;padding:14px 16px;backdrop-filter:blur(6px);max-width:380px;display:none;max-height:75vh;overflow:auto}
   #info h2{font-size:14px;margin:0 0 4px;color:#e7ecf2;font-weight:600;word-break:break-all}
   #info .meta{color:#7c8693;font-size:11px;margin-bottom:8px}
   #info .row{margin:6px 0;font-size:12px;color:#aeb6bf}
   #info .row b{color:#9aa4af;font-size:10px;letter-spacing:.06em;display:block;margin-bottom:2px}
   #info code{background:#1a2029;padding:1px 5px;border-radius:3px;font-size:11px;color:#f0b860}
+  #info .closeX{position:absolute;top:6px;right:10px;background:none;border:0;color:#5b6470;font-size:14px;cursor:pointer}
+
+  /* 스윔레인 */
+  .lane-band{fill:#0c1018;stroke:#1a2029;stroke-width:1}
+  .lane-band.aux{fill:#0a0d12;opacity:.55}
+  .lane-label{fill:#9aa4af;font-size:11px;font-weight:600;font-family:inherit}
+  .lane-sub{fill:#5b6470;font-size:9.5px;font-family:inherit}
+  .lane-divider{stroke:#1a2029;stroke-width:1;stroke-dasharray:3 4}
+
+  /* 노드 */
   .node-rect{stroke:#1a2029;stroke-width:1.5;cursor:pointer;transition:stroke .15s}
   .node-rect:hover{stroke:#fff;stroke-width:2}
   .node-rect.sel{stroke:#fff;stroke-width:2.5}
+  .node-rect.aux{opacity:.5}
   .node-text{fill:#0a0d12;font-size:11px;font-weight:600;pointer-events:none;font-family:inherit}
   .node-date{fill:#0a0d12;font-size:9px;opacity:.7;pointer-events:none;font-family:inherit}
-  .edge-time{stroke:#7fd1ff;stroke-width:1.4;fill:none;opacity:.55}
-  .edge-skill{stroke:#f0b860;stroke-width:1.0;stroke-dasharray:4 4;fill:none;opacity:.4}
+  .node-text.aux{fill:#e7ecf2;opacity:.85}
+  .node-date.aux{fill:#9aa4af}
+
+  /* 엣지 */
+  .edge-time{stroke:#7fd1ff;stroke-width:1.2;fill:none;opacity:.42}
+  .edge-skill{stroke:#f0b860;stroke-width:0.9;stroke-dasharray:4 4;fill:none;opacity:.35}
 </style></head>
 <body>
+<div id="topbar"></div>
 <div id="wrap">
-<div id="hud">
-  <h1>📋 규격이 — 업무 흐름</h1>
-  <div class="stat" id="stat"></div>
+<div id="dash"></div>
+<div id="ctrls">
+  <h2>범례</h2>
   <div id="legend"></div>
+  <h2>레이아웃</h2>
   <div id="toggles">
-    <button id="btn-horiz" class="active">좌 → 우 (시간축 가로)</button>
+    <button id="btn-horiz" class="active">좌 → 우 (시간축 가로 + 스윔레인)</button>
     <button id="btn-vert">위 → 아래 (시간축 세로)</button>
   </div>
 </div>
-<div id="info"></div>
+<div id="info"><button class="closeX" id="closeInfo">×</button><div id="infoBody"></div></div>
 <div id="hint">드래그 = 이동 · 휠 = 줌 · 노드 = 상세</div>
-<div id="brand">Agentis v1.5 · build_flow.py · 자체완결 (외부 의존 0)</div>
+<div id="brand">Agentis v1.6 · build_flow.py · 자체완결 (외부 의존 0)</div>
 <svg id="svg" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <marker id="arrow-time" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
@@ -52,46 +86,158 @@
     </marker>
   </defs>
   <g id="viewport">
+    <g id="lanes"></g>
     <g id="edges"></g>
     <g id="nodes"></g>
   </g>
 </svg>
 </div>
 <script>
-const DATA = {"agent": "규격이", "entries": [{"id": "e004", "date": "2026-05-07", "type": "setup", "type_raw": "setup", "title": "규격이 부팅", "summary": "이름·목적·범위 인터뷰 완료. `agentis/` 구조 생성. [[entities/홍길동-품질팀]], [[concepts/kc-rohs-기초]] 초안 작성.", "skills": [], "tokens": 0, "seconds": 0.0, "related": ["entities/홍길동-품질팀", "concepts/kc-rohs-기초"], "order": 0, "lane": 0}, {"id": "e003", "date": "2026-05-08", "type": "task", "type_raw": "task", "title": "모델X 시험성적서 항목 추출", "summary": "[[sources/2026-05-08-시험성적서-모델X]] 에서 12개 항목 추출 → 표. 카운트 검증 통과(12==12). 스캔 1페이지 OCR 흐릿 → 2개 칸 `??` 표시하고 홍길동 확인 요청. [[concepts/시험성적서-항목-스키마]] 초안 작성.", "skills": [], "tokens": 0, "seconds": 0.0, "related": ["sources/2026-05-08-시험성적서-모델X", "concepts/시험성적서-항목-스키마"], "order": 1, "lane": 1}, {"id": "e002", "date": "2026-05-09", "type": "skill", "type_raw": "skill", "title": "checklist-대조 추가", "summary": "체크리스트 대조가 제출 건마다 반복 → [[skills/checklist-대조]] 스킬로 승격 (SKILL.md + run.py). [[concepts/체크리스트-대조-원칙]] 을 코드로 옮김(정규화·동의어·개수검증).", "skills": ["checklist-대조"], "tokens": 0, "seconds": 0.0, "related": ["concepts/체크리스트-대조-원칙"], "order": 2, "lane": 2}, {"id": "e001", "date": "2026-05-10", "type": "ingest", "type_raw": "ingest", "title": "인증기관 제출문서 목록 v2", "summary": "[[sources/2026-05-10-제출문서목록-v2]] 요약. [[entities/kc-안전인증]] 의 요구 문서 목록 갱신. [[concepts/체크리스트-대조-원칙]] 에 \"버전 바뀌면 diff부터\" 규칙 추가.", "skills": [], "tokens": 0, "seconds": 0.0, "related": ["sources/2026-05-10-제출문서목록-v2", "entities/kc-안전인증", "concepts/체크리스트-대조-원칙"], "order": 3, "lane": 0}, {"id": "e000", "date": "2026-05-12", "type": "note", "type_raw": "note", "title": "제출 패키지 \"최종 점검 리포트\" 요청", "summary": "홍길동 요청: 체크리스트 대조 + 시험성적서 표를 한 장으로 묶은 리포트. [[hot]] 에 다음 할 일로 적음.", "skills": [], "tokens": 0, "seconds": 0.0, "related": ["hot"], "order": 4, "lane": 1}], "edges_time": [{"source": "e004", "target": "e003"}, {"source": "e003", "target": "e002"}, {"source": "e002", "target": "e001"}, {"source": "e001", "target": "e000"}], "edges_skill": [], "by_type": {"setup": 1, "task": 1, "skill": 1, "ingest": 1, "note": 1}, "skills_used": ["checklist-대조"], "types": {"setup": {"label": "부팅", "color": "#7fd1ff"}, "task": {"label": "작업", "color": "#f0b860"}, "ingest": {"label": "수집", "color": "#5fcaa0"}, "skill": {"label": "스킬", "color": "#ff8a8a"}, "lint": {"label": "정비", "color": "#c0c0c0"}, "note": {"label": "메모", "color": "#9b8cff"}, "seed": {"label": "씨드", "color": "#e7ecf2"}, "_other": {"label": "기타", "color": "#888888"}}};
+const DATA = {"agent": "규격이", "entries": [{"id": "e009", "date": "2026-05-07", "type": "setup", "type_raw": "setup", "title": "규격이 부팅", "summary": "이름·목적·범위 인터뷰 완료. `agentis/` 구조 생성. [[entities/홍길동-품질팀]], [[concepts/kc-rohs-기초]] 초안 작성.", "skills": [], "tokens": 0, "seconds": 0.0, "related": ["entities/홍길동-품질팀", "concepts/kc-rohs-기초"], "classification": "aux", "primary_id": null, "order": 0}, {"id": "e008", "date": "2026-05-08", "type": "task", "type_raw": "task", "title": "모델X 시험성적서 항목 추출", "summary": "[[sources/2026-05-08-시험성적서-모델X]] 에서 12개 항목 추출 → 표. 카운트 검증 통과(12==12). 스캔 1페이지 OCR 흐릿 → 2개 칸 `??` 표시하고 홍길동 확인 요청. [[concepts/시험성적서-항목-스키마]] 초안 작성. tokens: 2400, sec: 8.", "skills": [], "tokens": 2400, "seconds": 8.0, "related": ["sources/2026-05-08-시험성적서-모델X", "concepts/시험성적서-항목-스키마"], "classification": "primary", "primary_id": 2, "order": 1}, {"id": "e007", "date": "2026-05-09", "type": "skill", "type_raw": "skill", "title": "checklist-대조 추가", "summary": "체크리스트 대조가 제출 건마다 반복 → [[skills/checklist-대조]] 스킬로 승격 (SKILL.md + run.py). [[concepts/체크리스트-대조-원칙]] 을 코드로 옮김(정규화·동의어·개수검증).", "skills": ["checklist-대조"], "tokens": 0, "seconds": 0.0, "related": ["concepts/체크리스트-대조-원칙"], "classification": "aux", "primary_id": null, "order": 2}, {"id": "e006", "date": "2026-05-10", "type": "ingest", "type_raw": "ingest", "title": "인증기관 제출문서 목록 v2", "summary": "[[sources/2026-05-10-제출문서목록-v2]] 요약. [[entities/kc-안전인증]] 의 요구 문서 목록 갱신. [[concepts/체크리스트-대조-원칙]] 에 \"버전 바뀌면 diff부터\" 규칙 추가.", "skills": [], "tokens": 0, "seconds": 0.0, "related": ["sources/2026-05-10-제출문서목록-v2", "entities/kc-안전인증", "concepts/체크리스트-대조-원칙"], "classification": "aux", "primary_id": null, "order": 3}, {"id": "e005", "date": "2026-05-12", "type": "note", "type_raw": "note", "title": "제출 패키지 \"최종 점검 리포트\" 요청", "summary": "홍길동 요청: 체크리스트 대조 + 시험성적서 표를 한 장으로 묶은 리포트. [[hot]] 에 다음 할 일로 적음. → primary_tasks 4번으로 승격.", "skills": [], "tokens": 0, "seconds": 0.0, "related": ["hot"], "classification": "aux", "primary_id": null, "order": 4}, {"id": "e004", "date": "2026-05-14", "type": "task", "type_raw": "task", "title": "모델Y 추출표 대조 검증 보고", "summary": "항목 15건 1:1 대조. 1건 ?? 마킹 (스캔 흐림). tokens: 1500, sec: 5.", "skills": [], "tokens": 1500, "seconds": 5.0, "related": [], "classification": "primary", "primary_id": 3, "order": 5}, {"id": "e003", "date": "2026-05-15", "type": "task", "type_raw": "task", "title": "모델Y 시험성적서 항목 추출", "summary": "[[sources/2026-05-15-시험성적서-모델Y]] 에서 15개 항목 추출. 카운트 15==15. tokens: 2100, sec: 6.", "skills": [], "tokens": 2100, "seconds": 6.0, "related": ["sources/2026-05-15-시험성적서-모델Y"], "classification": "primary", "primary_id": 2, "order": 6}, {"id": "e002", "date": "2026-05-18", "type": "task", "type_raw": "task", "title": "사용자 환경 설정 — VS Code 한글 폰트", "summary": "홍길동 요청 (부수). settings.json 안내. tokens: 800.", "skills": [], "tokens": 800, "seconds": 0.0, "related": [], "classification": "aux", "primary_id": null, "order": 7}, {"id": "e001", "date": "2026-05-20", "type": "task", "type_raw": "task", "title": "모델Y 체크리스트 대조 v3", "summary": "14개 항목 중 2개 누락 적발 → 홍길동 보고. tokens: 1800, sec: 4.", "skills": [], "tokens": 1800, "seconds": 4.0, "related": [], "classification": "primary", "primary_id": 1, "order": 8}, {"id": "e000", "date": "2026-05-22", "type": "task", "type_raw": "task", "title": "모델Y 제출 패키지 최종 점검 리포트 생성", "summary": "[[skills/checklist-대조]] + 시험성적서 표를 묶어 한 페이지 리포트. 홍길동 검토 5분 → ok. tokens: 4200, sec: 12.", "skills": ["checklist-대조"], "tokens": 4200, "seconds": 12.0, "related": [], "classification": "primary", "primary_id": 4, "order": 9}], "edges_time": [{"source": "e009", "target": "e008"}, {"source": "e008", "target": "e007"}, {"source": "e007", "target": "e006"}, {"source": "e006", "target": "e005"}, {"source": "e005", "target": "e004"}, {"source": "e004", "target": "e003"}, {"source": "e003", "target": "e002"}, {"source": "e002", "target": "e001"}, {"source": "e001", "target": "e000"}], "edges_skill": [{"source": "e007", "target": "e000", "skill": "checklist-대조"}], "by_type": {"setup": 1, "task": 6, "skill": 1, "ingest": 1, "note": 1}, "skills_used": ["checklist-대조"], "primary_tasks": [{"id": 1, "name": "체크리스트 대조", "description": "제출문서목록 ↔ 인증기관 요구 체크리스트 대조 → 누락/불일치 찾기", "success_metric": "누락 적발률 100%, 사람 30분 → 2분"}, {"id": 2, "name": "시험성적서 항목 추출", "description": "시험성적서(PDF/스캔→텍스트) 에서 시험 항목·결과·판정 추출 → 표(csv/xlsx)", "success_metric": "처리 항목 수 == 원본 항목 수, OCR 불명은 ??로 표시"}, {"id": 3, "name": "대조 검증 보고", "description": "추출 결과를 원본과 1:1 대조 검증 후 사람이 읽을 수 있는 요약 보고서로 정리", "success_metric": "수치 1:1 일치 후에만 보고, 못 읽은 칸은 빈칸이 아닌 ?? 로 마킹"}, {"id": 4, "name": "제출 패키지 최종 점검 리포트", "description": "위 1·2·3 결과를 한 장으로 묶어 제출 직전 사람 검토용 한 페이지 요약", "success_metric": "사람 검토 시간 1시간 → 5분"}], "primary_stats": [{"id": 1, "name": "체크리스트 대조", "description": "제출문서목록 ↔ 인증기관 요구 체크리스트 대조 → 누락/불일치 찾기", "success_metric": "누락 적발률 100%, 사람 30분 → 2분", "count": 1, "last_date": "2026-05-20", "avg_tokens": 1800, "color": "#3b82f6"}, {"id": 2, "name": "시험성적서 항목 추출", "description": "시험성적서(PDF/스캔→텍스트) 에서 시험 항목·결과·판정 추출 → 표(csv/xlsx)", "success_metric": "처리 항목 수 == 원본 항목 수, OCR 불명은 ??로 표시", "count": 2, "last_date": "2026-05-15", "avg_tokens": 2250, "color": "#10b981"}, {"id": 3, "name": "대조 검증 보고", "description": "추출 결과를 원본과 1:1 대조 검증 후 사람이 읽을 수 있는 요약 보고서로 정리", "success_metric": "수치 1:1 일치 후에만 보고, 못 읽은 칸은 빈칸이 아닌 ?? 로 마킹", "count": 1, "last_date": "2026-05-14", "avg_tokens": 1500, "color": "#8b5cf6"}, {"id": 4, "name": "제출 패키지 최종 점검 리포트", "description": "위 1·2·3 결과를 한 장으로 묶어 제출 직전 사람 검토용 한 페이지 요약", "success_metric": "사람 검토 시간 1시간 → 5분", "count": 1, "last_date": "2026-05-22", "avg_tokens": 4200, "color": "#f97316"}], "primary_colors": {"1": "#3b82f6", "2": "#10b981", "3": "#8b5cf6", "4": "#f97316", "5": "#ec4899"}, "aux_color": "#6b7280", "counts": {"primary": 5, "aux": 5, "total": 10, "primary_30d": 5, "aux_30d": 5}, "types": {"setup": {"label": "부팅", "color": "#7fd1ff"}, "task": {"label": "작업", "color": "#f0b860"}, "ingest": {"label": "수집", "color": "#5fcaa0"}, "skill": {"label": "스킬", "color": "#ff8a8a"}, "lint": {"label": "정비", "color": "#c0c0c0"}, "note": {"label": "메모", "color": "#9b8cff"}, "seed": {"label": "씨드", "color": "#e7ecf2"}, "push": {"label": "푸시", "color": "#7ad6e8"}, "_other": {"label": "기타", "color": "#888888"}}};
 const TYPES = DATA.types;
+const PRIMARY_COLORS = DATA.primary_colors || {};
+const AUX_COLOR = DATA.aux_color || '#6b7280';
+const HAS_PRIMARY = (DATA.primary_tasks && DATA.primary_tasks.length > 0);
 
 // ── 레이아웃 ────────────────────────────────────────────────────────
-const NODE_W = 200, NODE_H = 56, GAP_X = 90, GAP_Y = 96;
-let orientation = 'horiz';  // 'horiz' | 'vert'
+const NODE_W = 200, NODE_H = 48, GAP_X = 70, GAP_Y = 82;
+const LANE_H = 92;       // 스윔레인 한 칸 높이
+const LANE_LBL_W = 180;  // 레인 라벨 영역 너비
+const TOP_PAD = 20;
+let orientation = 'horiz';  // 'horiz' = 스윔레인 가로, 'vert' = 시간축 세로 (단순)
 
-function laidOut() {
+// 레인 정의: HAS_PRIMARY 면 primary N + aux. 아니면 단일 레인.
+function buildLanes() {
+  const lanes = [];
+  if (HAS_PRIMARY) {
+    DATA.primary_tasks.forEach((t, idx) => {
+      lanes.push({
+        kind: 'primary',
+        id: t.id,
+        name: t.name,
+        sub: t.description || '',
+        color: PRIMARY_COLORS[t.id] || AUX_COLOR,
+        yIndex: idx,
+      });
+    });
+    lanes.push({
+      kind: 'aux',
+      id: 'aux',
+      name: '부수 업무 (aux)',
+      sub: '주요 업무 외 모든 작업 (자동/수동 분류)',
+      color: AUX_COLOR,
+      yIndex: lanes.length,
+    });
+  } else {
+    lanes.push({
+      kind: 'all',
+      id: 'all',
+      name: '전체 작업',
+      sub: 'primary_tasks 미정의 — 단순 시간순',
+      color: '#7fd1ff',
+      yIndex: 0,
+    });
+  }
+  return lanes;
+}
+
+function laneFor(entry, lanes) {
+  if (!HAS_PRIMARY) return lanes[0];
+  if (entry.classification === 'primary' && entry.primary_id != null) {
+    const ln = lanes.find(l => l.kind === 'primary' && l.id === entry.primary_id);
+    if (ln) return ln;
+  }
+  return lanes.find(l => l.kind === 'aux') || lanes[lanes.length - 1];
+}
+
+function laidOut(lanes) {
   const n = DATA.entries.length;
-  return DATA.entries.map((e, i) => {
-    const ord = e.order;  // 0 = 가장 옛, n-1 = 가장 최신
-    const laneOffset = (e.lane - 1) * (NODE_H + 22);
+  return DATA.entries.map((e) => {
+    const ord = e.order;
     if (orientation === 'horiz') {
+      const lane = laneFor(e, lanes);
+      const ly = TOP_PAD + lane.yIndex * LANE_H + (LANE_H - NODE_H) / 2;
       return Object.assign({}, e, {
-        x: 60 + ord * (NODE_W + GAP_X),
-        y: 220 + laneOffset
+        x: LANE_LBL_W + 30 + ord * (NODE_W + GAP_X),
+        y: ly,
+        laneId: lane.id,
+        laneKind: lane.kind,
       });
     } else {
+      // 세로 모드 — 단순 시간축. lane 무시 (대신 type 별 컬럼)
       return Object.assign({}, e, {
-        x: 200 + (e.lane - 1) * (NODE_W + 30),
-        y: 60 + ord * (NODE_H + GAP_Y)
+        x: 220 + ((e.order % 3) - 1) * (NODE_W + 30),
+        y: 60 + ord * (NODE_H + GAP_Y),
+        laneId: 'vert',
+        laneKind: e.classification,
       });
     }
   });
 }
 
 function render() {
-  const positioned = laidOut();
+  const lanes = buildLanes();
+  const positioned = laidOut(lanes);
   const byId = Object.fromEntries(positioned.map(p => [p.id, p]));
 
+  const lanesG = document.getElementById('lanes');
   const edgesG = document.getElementById('edges');
   const nodesG = document.getElementById('nodes');
+  lanesG.innerHTML = '';
   edgesG.innerHTML = '';
   nodesG.innerHTML = '';
+
+  // 스윔레인 밴드 (가로 모드만)
+  if (orientation === 'horiz') {
+    const lastOrd = Math.max(0, DATA.entries.length - 1);
+    const totalW = LANE_LBL_W + 30 + (lastOrd + 1) * (NODE_W + GAP_X) + 100;
+    lanes.forEach((ln, i) => {
+      const y = TOP_PAD + i * LANE_H;
+      const band = svgEl('rect', {
+        class: 'lane-band' + (ln.kind === 'aux' ? ' aux' : ''),
+        x: 0, y: y, width: totalW, height: LANE_H,
+      });
+      lanesG.appendChild(band);
+
+      // 왼쪽 컬러 스트라이프
+      const stripe = svgEl('rect', {
+        x: 0, y: y, width: 4, height: LANE_H, fill: ln.color, opacity: ln.kind === 'aux' ? 0.5 : 0.95,
+      });
+      lanesG.appendChild(stripe);
+
+      // 라벨
+      const lbl = svgEl('text', {
+        class: 'lane-label', x: 14, y: y + 22,
+      });
+      lbl.textContent = ln.kind === 'primary' ? `[primary:${ln.id}] ${ln.name}` : ln.name;
+      lanesG.appendChild(lbl);
+
+      const sub = svgEl('text', {
+        class: 'lane-sub', x: 14, y: y + 38,
+      });
+      sub.textContent = truncate(ln.sub, 28);
+      lanesG.appendChild(sub);
+
+      // 카운트 배지
+      const cnt = DATA.entries.filter(e => {
+        const elane = laneFor(e, lanes);
+        return elane.id === ln.id && elane.kind === ln.kind;
+      }).length;
+      const cntT = svgEl('text', {
+        class: 'lane-sub', x: 14, y: y + 56,
+      });
+      cntT.textContent = `처리 ${cnt}건`;
+      lanesG.appendChild(cntT);
+
+      // 디바이더 (마지막 제외)
+      if (i < lanes.length - 1) {
+        const div = svgEl('line', {
+          class: 'lane-divider', x1: LANE_LBL_W, y1: y + LANE_H, x2: totalW, y2: y + LANE_H,
+        });
+        lanesG.appendChild(div);
+      }
+    });
+  }
 
   // 엣지 — 스킬 (밑에 깔리도록 먼저)
   DATA.edges_skill.forEach(ed => {
@@ -114,20 +260,32 @@ function render() {
 
   // 노드
   positioned.forEach(p => {
+    const isAux = (p.classification === 'aux');
+    const fill = (HAS_PRIMARY && p.classification === 'primary' && p.primary_id != null)
+      ? (PRIMARY_COLORS[p.primary_id] || AUX_COLOR)
+      : (isAux ? AUX_COLOR : (TYPES[p.type] || TYPES._other).color);
+
     const g = svgEl('g', { transform: `translate(${p.x},${p.y})`, 'data-id': p.id });
-    const ty = TYPES[p.type] || TYPES._other;
     const rect = svgEl('rect', {
-      class: 'node-rect', width: NODE_W, height: NODE_H, rx: 8, ry: 8,
-      fill: ty.color
+      class: 'node-rect' + (isAux ? ' aux' : ''), width: NODE_W, height: NODE_H, rx: 7, ry: 7,
+      fill: fill,
     });
     g.appendChild(rect);
 
-    const title = svgEl('text', { class: 'node-text', x: 10, y: 22 });
+    const title = svgEl('text', {
+      class: 'node-text' + (isAux ? ' aux' : ''),
+      x: 10, y: 19,
+    });
     title.textContent = truncate(p.title, 26);
     g.appendChild(title);
 
-    const sub = svgEl('text', { class: 'node-date', x: 10, y: 40 });
-    sub.textContent = `[${p.date}] ${ty.label}` + (p.skills.length ? ` · 🔧${p.skills.length}` : '');
+    const ty = TYPES[p.type] || TYPES._other;
+    const sub = svgEl('text', {
+      class: 'node-date' + (isAux ? ' aux' : ''),
+      x: 10, y: 35,
+    });
+    const tag = (p.classification === 'primary' && p.primary_id != null) ? `[p${p.primary_id}]` : '[aux]';
+    sub.textContent = `${tag} [${p.date}] ${ty.label}` + (p.skills.length ? ` · 🔧${p.skills.length}` : '');
     g.appendChild(sub);
 
     g.addEventListener('click', (ev) => {
@@ -139,13 +297,12 @@ function render() {
     nodesG.appendChild(g);
   });
 
-  fitView(positioned);
+  fitView(positioned, lanes);
 }
 
 function pathBetween(s, t, curved) {
   const sx = s.x + NODE_W, sy = s.y + NODE_H / 2;
   const tx = t.x, ty = t.y + NODE_H / 2;
-  // 세로 모드면 출발/도착 점을 위/아래로
   let ax, ay, bx, by;
   if (orientation === 'horiz') {
     ax = sx; ay = sy; bx = tx; by = ty;
@@ -172,21 +329,28 @@ function truncate(s, n) {
 
 // ── 상세 패널 ──────────────────────────────────────────────────────
 const info = document.getElementById('info');
+const infoBody = document.getElementById('infoBody');
 function showDetail(p) {
   const ty = TYPES[p.type] || TYPES._other;
   const skills = p.skills.length ? p.skills.map(s => `<code>skills/${esc(s)}</code>`).join(' ') : '<i style="color:#5b6470">없음</i>';
   const related = p.related.length ? p.related.map(r => `<code>${esc(r)}</code>`).join(' ') : '<i style="color:#5b6470">없음</i>';
   const tokens = p.tokens ? p.tokens.toLocaleString() + ' tok' : '미기록';
   const secs = p.seconds ? p.seconds + ' s' : '미기록';
+  const cls = (p.classification === 'primary' && p.primary_id != null)
+    ? `<span style="color:${esc(PRIMARY_COLORS[p.primary_id] || AUX_COLOR)};font-weight:600">[primary:${p.primary_id}]</span>`
+    : '<span style="color:#9aa4af">[aux]</span>';
   info.style.display = 'block';
-  info.innerHTML =
+  infoBody.innerHTML =
     `<h2>${esc(p.title)}</h2>` +
-    `<div class="meta">[${esc(p.date)}] · ${esc(ty.label)} (${esc(p.type_raw)}) · #${p.order + 1}</div>` +
+    `<div class="meta">${cls} · [${esc(p.date)}] · ${esc(ty.label)} (${esc(p.type_raw)}) · #${p.order + 1}</div>` +
     `<div class="row"><b>요약</b>${esc(p.summary || '(본문 첫 줄 없음)')}</div>` +
     `<div class="row"><b>사용 스킬</b>${skills}</div>` +
     `<div class="row"><b>관련 페이지</b>${related}</div>` +
     `<div class="row"><b>토큰 · 시간</b>${tokens} · ${secs}</div>`;
 }
+document.getElementById('closeInfo').addEventListener('click', () => {
+  info.style.display = 'none';
+});
 document.getElementById('svg').addEventListener('click', () => {
   info.style.display = 'none';
   document.querySelectorAll('.node-rect.sel').forEach(n => n.classList.remove('sel'));
@@ -203,18 +367,27 @@ let vx = 0, vy = 0, vz = 1;
 function applyView() {
   viewport.setAttribute('transform', `translate(${vx},${vy}) scale(${vz})`);
 }
-function fitView(positioned) {
+function fitView(positioned, lanes) {
   if (!positioned.length) return;
-  const xs = positioned.map(p => p.x);
-  const ys = positioned.map(p => p.y);
-  const minX = Math.min(...xs), maxX = Math.max(...xs) + NODE_W;
-  const minY = Math.min(...ys), maxY = Math.max(...ys) + NODE_H;
+  let minX, minY, maxX, maxY;
+  if (orientation === 'horiz' && lanes && lanes.length) {
+    minX = 0;
+    maxX = LANE_LBL_W + 30 + DATA.entries.length * (NODE_W + GAP_X) + 60;
+    minY = 0;
+    maxY = TOP_PAD + lanes.length * LANE_H + 20;
+  } else {
+    const xs = positioned.map(p => p.x);
+    const ys = positioned.map(p => p.y);
+    minX = Math.min(...xs); maxX = Math.max(...xs) + NODE_W;
+    minY = Math.min(...ys); maxY = Math.max(...ys) + NODE_H;
+  }
   const w = svg.clientWidth || window.innerWidth;
   const h = svg.clientHeight || window.innerHeight;
-  const pad = 80;
-  vz = Math.min((w - pad * 2) / Math.max(1, maxX - minX), (h - pad * 2) / Math.max(1, maxY - minY), 1.2);
-  vx = pad - minX * vz + (w - pad * 2 - (maxX - minX) * vz) / 2;
-  vy = pad - minY * vz + (h - pad * 2 - (maxY - minY) * vz) / 2;
+  const padL = 320, padR = 290, padT = 70, padB = 50;
+  vz = Math.min((w - padL - padR) / Math.max(1, maxX - minX), (h - padT - padB) / Math.max(1, maxY - minY), 1.0);
+  if (!isFinite(vz) || vz <= 0) vz = 1;
+  vx = padL - minX * vz;
+  vy = padT - minY * vz + Math.max(0, (h - padT - padB - (maxY - minY) * vz) / 2);
   applyView();
 }
 svg.addEventListener('wheel', (e) => {
@@ -255,20 +428,50 @@ document.getElementById('btn-vert').addEventListener('click', () => {
   render();
 });
 
-// ── HUD 채우기 ─────────────────────────────────────────────────────
-document.getElementById('stat').textContent =
-  `${DATA.entries.length} 작업 · 시간엣지 ${DATA.edges_time.length} · 스킬그룹엣지 ${DATA.edges_skill.length} · 스킬 ${DATA.skills_used.length}종`;
+// ── 상단 헤더 한 줄 ────────────────────────────────────────────────
+const tbar = document.getElementById('topbar');
+const c = DATA.counts;
+const pn = (DATA.primary_tasks || []).length;
+tbar.innerHTML =
+  `<b>🎯 ${esc(DATA.agent)}</b><span class="sep">·</span>` +
+  `주요 업무 <b>${pn}</b>개<span class="sep">·</span>` +
+  `처리 <b>${c.primary_30d}</b>건 (지난 30일)<span class="sep">·</span>` +
+  `부수 업무 <b>${c.aux_30d}</b>건<span class="sep">·</span>` +
+  `<span style="color:#5b6470">총 ${c.total}건 (주요 ${c.primary} / 부수 ${c.aux})</span>`;
 
+// ── 좌측 대시보드 카드 ──────────────────────────────────────────────
+const dash = document.getElementById('dash');
+(DATA.primary_stats || []).forEach(s => {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.style.borderLeftColor = s.color;
+  const avgTok = s.avg_tokens ? `${s.avg_tokens.toLocaleString()} tok` : '—';
+  card.innerHTML =
+    `<div class="ttl"><span class="badge" style="background:${esc(s.color)}">p${s.id}</span>${esc(s.name)}</div>` +
+    `<div class="meta">처리 <b style="color:#cdd3da">${s.count}</b>건 · 최근 ${esc(s.last_date || '미처리')}<br>` +
+    `최근 토큰 평균 ${avgTok}</div>`;
+  dash.appendChild(card);
+});
+// 부수 카드
+if (DATA.counts.aux > 0) {
+  const auxCard = document.createElement('div');
+  auxCard.className = 'card aux';
+  auxCard.innerHTML =
+    `<div class="ttl"><span class="badge" style="background:${esc(AUX_COLOR)}">aux</span>부수 업무</div>` +
+    `<div class="meta">처리 <b style="color:#9aa4af">${DATA.counts.aux}</b>건 · 지난 30일 ${DATA.counts.aux_30d}건</div>`;
+  dash.appendChild(auxCard);
+}
+
+// ── 범례 채우기 ───────────────────────────────────────────────────
 const legend = document.getElementById('legend');
-const usedTypes = [...new Set(DATA.entries.map(e => e.type))];
-usedTypes.sort();
-legend.innerHTML = usedTypes.map(t => {
-  const s = TYPES[t] || TYPES._other;
-  const k = DATA.by_type[t] || 0;
-  return `<span><i style="background:${s.color}"></i>${esc(s.label)} ${k}</span>`;
-}).join('');
+const legParts = [];
+(DATA.primary_tasks || []).forEach(t => {
+  legParts.push(`<span><i style="background:${esc(PRIMARY_COLORS[t.id] || AUX_COLOR)}"></i>p${t.id}</span>`);
+});
+legParts.push(`<span><i style="background:${esc(AUX_COLOR)};opacity:.5"></i>aux</span>`);
+legend.innerHTML = legParts.join('');
 
 render();
-window.addEventListener('resize', () => fitView(laidOut()));
+window.addEventListener('resize', () => fitView(laidOut(buildLanes()), buildLanes()));
 </script>
 </body></html>

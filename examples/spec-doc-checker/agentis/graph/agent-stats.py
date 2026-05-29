@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# agentis-kit: v1.6 / agent-stats
 """
 agent-stats.py — 에이전트의 능력치(Character Sheet) 자동 산출.
 
@@ -52,8 +53,72 @@ for _s in (sys.stdout, sys.stderr):
     except Exception:
         pass
 
-LOG_HEADER_RE = re.compile(r"^##\s*\[(\d{4}-\d{2}-\d{2})\]\s*(\w+)\s*\|\s*(.+?)\s*$", re.MULTILINE)
+LOG_HEADER_RE = re.compile(
+    r"^##\s*\[(\d{4}-\d{2}-\d{2})\]\s*(\w+)\s*(?:\[(primary:\d+|aux)\])?\s*\|\s*(.+?)\s*$",
+    re.MULTILINE,
+)
 FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*(?:\n|$)", re.DOTALL)
+
+
+def parse_primary_tasks(agent_text: str) -> list[dict]:
+    """agent.md 의 `primary_tasks:` YAML 리스트 파싱. pyyaml 의존 없음."""
+    lines = agent_text.splitlines()
+    start = None
+    for i, ln in enumerate(lines):
+        if re.match(r"^\s*primary_tasks\s*:\s*$", ln):
+            start = i + 1
+            break
+    if start is None:
+        return []
+    tasks: list[dict] = []
+    cur: dict | None = None
+    end_re_hard = re.compile(r"^(##\s|```|\Z)")
+    item_re = re.compile(r"^(\s*)-\s+(.+)$")
+    kv_re = re.compile(r"^(\s*)([A-Za-z_][\w-]*)\s*:\s*(.*)$")
+    for j in range(start, len(lines)):
+        ln = lines[j]
+        if end_re_hard.match(ln):
+            break
+        if ln.strip() == "":
+            continue
+        if ln.lstrip().startswith("#"):
+            continue
+        m_item = item_re.match(ln)
+        if m_item:
+            if cur:
+                tasks.append(cur)
+            cur = {}
+            rest = m_item.group(2).strip()
+            mkv = re.match(r"^([A-Za-z_][\w-]*)\s*:\s*(.+)$", rest)
+            if mkv:
+                cur[mkv.group(1).lower()] = mkv.group(2).strip().strip("\"'")
+            continue
+        m_kv = kv_re.match(ln)
+        if m_kv and cur is not None:
+            k = m_kv.group(2).lower()
+            v = m_kv.group(3).strip().strip("\"'")
+            if len(m_kv.group(1)) == 0 and k != "primary_tasks":
+                break
+            cur[k] = v
+            continue
+        if not ln.startswith(" ") and not ln.startswith("\t"):
+            break
+    if cur:
+        tasks.append(cur)
+    out = []
+    for idx, t in enumerate(tasks, start=1):
+        if "name" not in t and "id" not in t:
+            continue
+        try:
+            tid = int(t.get("id", idx))
+        except (TypeError, ValueError):
+            tid = idx
+        name = t.get("name", f"primary {tid}").strip()
+        if not name:
+            continue
+        out.append({"id": tid, "name": name})
+    out.sort(key=lambda x: x["id"])
+    return out
 
 
 def find_root(start: Path) -> Path:
@@ -112,16 +177,31 @@ def collect(root: Path) -> dict:
     agent_text = (root / "agent.md").read_text(encoding="utf-8", errors="replace")
     out["name"] = parse_h1(agent_text, root.name)
 
+    # primary_tasks (v1.6)
+    out["primary_tasks"] = parse_primary_tasks(agent_text)
+
     # log
     log = root / "memory" / "log.md"
     by_type = Counter()
     entries = []
+    primary_counter: Counter[int] = Counter()
+    aux_count = 0
+    primary_total = 0
     if log.is_file():
         text = log.read_text(encoding="utf-8", errors="replace")
         for m in LOG_HEADER_RE.finditer(text):
-            date, typ, title = m.group(1), m.group(2).lower(), m.group(3)
+            date, typ, tag_raw, title = m.group(1), m.group(2).lower(), (m.group(3) or "").lower(), m.group(4)
             entries.append((date, typ, title))
             by_type[typ] += 1
+            if tag_raw.startswith("primary:"):
+                try:
+                    pid = int(tag_raw.split(":", 1)[1])
+                    primary_counter[pid] += 1
+                    primary_total += 1
+                except (ValueError, IndexError):
+                    aux_count += 1
+            else:
+                aux_count += 1
         tokens, secs = parse_extra_meta(text)
     else:
         tokens, secs = 0, 0.0
@@ -129,6 +209,9 @@ def collect(root: Path) -> dict:
     out["by_type"] = dict(by_type)
     out["tokens"] = tokens
     out["seconds"] = secs
+    out["primary_counts"] = dict(primary_counter)   # {1: 23, 2: 18, ...}
+    out["primary_total"] = primary_total
+    out["aux_count"] = aux_count
 
     # birth/age
     if entries:
@@ -254,6 +337,21 @@ def sheet(s: dict, d: dict, *, plain: bool = False) -> str:
     lines.append(f"  그래프 — 노드 {s['graph_nodes']} / 엣지 {s['graph_edges']}")
     lines.append(f"  토큰 사용 — {s['tokens']:,}  ·  처리시간 합 — {s['seconds']:.1f}s")
     lines.append(f"  효율(작업/1k토큰) — {eff_s}")
+
+    # 주요 업무 처리율 (v1.6)
+    pt = s.get("primary_tasks", []) or []
+    p_total = s.get("primary_total", 0)
+    a_count = s.get("aux_count", 0)
+    denom = p_total + a_count
+    if pt:
+        lines.append("─" * 56)
+        rate = (p_total * 100 // denom) if denom else 0
+        lines.append(f"  🎯 주요 업무 처리율: {rate}% ({p_total} / {denom}건)")
+        for t in pt:
+            cnt = s.get("primary_counts", {}).get(t["id"], 0)
+            lines.append(f"     - [{t['id']}] {t['name']}: {cnt}건")
+        lines.append(f"     부수 업무: {a_count}건")
+
     if s["top_tags"]:
         lines.append("─" * 56)
         lines.append("  🧬 감지된 도메인 유전자 (상위 태그):")
@@ -269,6 +367,32 @@ def stats_md(s: dict, d: dict) -> str:
     eff = d["Efficiency_per_1k_tok"]
     tags = "\n".join(f"- `{t}`  ×{c}" for t, c in s["top_tags"]) or "- (아직 없음)"
 
+    # 주요 업무 처리율 (v1.6)
+    pt = s.get("primary_tasks", []) or []
+    p_total = s.get("primary_total", 0)
+    a_count = s.get("aux_count", 0)
+    denom = p_total + a_count
+    rate = (p_total * 100 // denom) if denom else 0
+    if pt:
+        primary_block_lines = [
+            f"## 🎯 주요 업무 처리율 (v1.6)",
+            "",
+            f"- **처리율**: **{rate}%** ({p_total} / {denom}건)",
+            "",
+            "| # | 주요 업무 | 처리 횟수 |",
+            "|---|----------|---------|",
+        ]
+        for t in pt:
+            cnt = s.get("primary_counts", {}).get(t["id"], 0)
+            primary_block_lines.append(f"| {t['id']} | {t['name']} | {cnt} |")
+        primary_block_lines.append(f"| — | 부수 업무 (aux) | {a_count} |")
+        primary_block = "\n".join(primary_block_lines) + "\n"
+    else:
+        primary_block = (
+            "## 🎯 주요 업무 처리율 (v1.6)\n\n"
+            "_아직 `primary_tasks:` 가 정의되지 않았어요. `agent.md` 에 3~5개 채우면 처리율이 집계됩니다._\n"
+        )
+
     return f"""---
 type: stats
 updated: {today}
@@ -283,6 +407,8 @@ auto: true
 - **Level**: {d['Level']}  ·  **XP**: {d['XP']:,}
 - **생일**: {s['birth_date'] or '(아직 없음)'}  ·  **나이**: {s['age_days']}일
 - **효율(작업/1k 토큰)**: {eff if eff is not None else '(토큰 미기록)'}
+
+{primary_block}
 
 ## 능력치
 

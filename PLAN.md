@@ -1,6 +1,7 @@
-# Agentis — 기획서 (v0.11)
+# Agentis — 기획서 (v0.12)
 
 > 작성: 코부장 / 2026-05-13 ~ 14 야간 + 후속 + v1.4 3D + v1.5 보강. 10차 피드백 반영(**씨드 .md 원복, 딥인터뷰 분기, Hermes 자가진화 보강, 3D 그래프 캐릭터 빌보드 적용, 업무 다이어그램, 두뇌 인덱스+Graph RAG, 사내 깃 자동 푸시, 홀로노믹 통합, 백엔드 만들지 마라 가이드**).
+> v0.12: 11차 피드백 반영 — 주요 업무 (primary_tasks) 정의 + flow.html 스윔레인 시각화 + 결정론 인스톨러 + 사내 깃 URL 확정.
 > v0.10: 3D 두뇌 그래프(Three.js 자체완결) + 캐릭터 자산 준비.
 > v0.9: 키트 우선·씨드는 폴백 규약 + 씨드 자체의 공유와 진화 (두 층 자기유사성).
 > v0.8: RPG 능력치 시트 자동 산출 + 에이전티스 세상 비전 문서 기록.
@@ -131,6 +132,7 @@ v1.0 = "표준 Cline 위에서, **md(설명·규약) + Python(실행·결정론)
 - **Phase 1.3 (v1.3 — 키트 우선 + 씨드 자체의 진화)** ✅ — 두 가지 큰 변화: ① 결정론 두 번째 기둥 **키트 우선·씨드는 폴백** 규약을 씨드 §0-1·§1-4·§3-6·§6·§7 에 박고, 키트 핵심 .py 6개에 `# agentis-kit: v1.3` 시그니처 + `.kit-version` 마커 추가. ② **씨드 자체의 공유와 진화** — 씨드 각 절에 `<!-- @section: N -->` 앵커 박고, 새 워크플로우 `씨드-업그레이드.py`(--check/--apply/--export-branch) 추가. 메타포 자기유사성: 에이전트 층 ↔ 씨드 층.
 - **Phase 1.4 (v1.4 — 3D 두뇌 그래프 + 캐릭터 자산 준비)** ✅ — `build_graph.py` 를 3D 버전으로 통째 재작성: Three.js r158 + 3d-force-graph v1.73.4 (둘 다 MIT) 를 `graph/vendor/` 에 동봉하고 빌드 시 한 HTML 에 인라인 → 자체완결 1.3MB 그래프 (외부 의존 0). 다크 테마, 카테고리 색, idle 자동 공전, 노드 포커스+이웃 패널, 범례 토글, 한국어 UI. VS Code 의 **Simple Browser** 로 사이드 탭에 띄움. InfraNodus 효용의 사내 친화 자체완결 대응 — 외부 SaaS·계정·프록시 통과 불필요. 캐릭터 자산(코부장 곰 / 오과장 개구리 / 젬대리 고양이 SVG + 프로필) 도 `graph/assets/characters/` 에 키트 동봉 — **v1.4.1 에서 그래프 안 빌보드 sprite 로 적용**. LLM Wiki 보완 4대 방법론(`docs/llm-wiki-evolution.md`) 메모: ② 구조적 공백 시각화가 다음 v1.5 후보. 빌드 정적 검증 15개 모두 PASS. → **다음 v1.4.1: 캐릭터 빌보드 + 활성 노드 추적 모션.**
 - **Phase 1.5 (v1.5 — 딥인터뷰 분기 + 캐릭터 빌보드 + Graph RAG + 사내깃 + 홀로노믹)** ✅ — ① `.clinerules/agentis.html` 삭제 + `.clinerules/agentis.md` 재설치(씨드와 동일). ② `seed/agentis.md` v1.5: §1-2.5 딥인터뷰 분기 신규, §3-5 Hermes 자가진화 보강, §3-7 자가 도태·lint 신규, §5-6 Level≥5 자동 안내 추가. ③ `build_graph.py` v1.5: THREE.Sprite + data URI SVG 캐릭터 빌보드 + sin wave bob + 활성 노드 lerp 추적. ④ `build_flow.py` 신규(590줄, n8n 스타일 업무 다이어그램, stdlib only). ⑤ `agent.template.md` 에 `character:` 필드 추가. ⑥ `memory/_brain/` 신규: `build_brain_index.py`(SQLite+FTS5, 374줄) + `query_brain.py`(hybrid/keyword/semantic/graph + RRF, 389줄) + `ingest_knowledge.py`(538줄) + `holonomic.md`(OffSpace 통합 7절). ⑦ `workflows/사내깃-올리기.py` 신규(591줄, Level≥5 자동 안내, 5모드). ⑧ `workflows/skill-도태.py` + `.workflow.md` 신규. ⑨ `workflows/memory-lint.py` + `.workflow.md` 신규. ⑩ `.kit-version` → `seed:1.5 / kit:1.5`. ⑪ `README.md` 상단 "잠깐 만들지 마세요" + 3분 셋업 + "공유=브랜치" 섹션. ⑫ `seed/build-html.py` 출력 → `docs/agentis-view.html`. ⑬ `docs/배포-사내깃허브.md` 신규. 검증 8종 PASS (build_graph/flow/stats/brain_index/query/lint/사내깃 --check).
+- **Phase 1.6 (v1.6)** ✅ — 주요 업무 정의(§1-2.6) + flow 스윔레인 + agent-stats 처리율 + install.py/bat/sh 인스톨러 + 사내 깃 URL 박힘.
 - **Phase 2** — 사내 검증 피드백 반영, 컨셉·도입 안내 문서(`docs/`), 스킬 라이브러리 확충, 메모리 위키 lint(Python), 사내 깃 메인 첫 운영(관리자 절차 정의).
 - **Phase 3** — Hermes식 학습 루프 본격화(스킬 자동생성·개선·nudge·과거대화 검색), graphify 본체 연동(의미관계·커뮤니티·신노드 강조), cline SR 환경 실측 후 사내 맞춤.
 - **Phase 4** — 사내 확산: 동료별 파일럿(규격인증/디버깅/…) + 피드백 반영.
@@ -173,6 +175,9 @@ v1.0 = "표준 Cline 위에서, **md(설명·규약) + Python(실행·결정론)
 - ✅ **(v1.5)** 캐릭터 부팅 선택: `agent.md` 의 `character:` 필드로 사용자가 코부장/오과장/젬대리 중 선택. 미설정 시 `코부장` 기본.
 - ✅ **(v1.5)** 사내깃 자동 푸시 Level≥5 게이트: Level 5 미만이면 안내 후 대기, Level≥5 이면 자동 진행.
 - ✅ **(v1.5)** 검증 풀: 예제 8종 명령 재현 기준 — build_graph/build_flow/agent-stats/build_brain_index/query_brain/memory-lint/사내깃--check 모두 PASS.
+- ✅ **(v1.6)** 사내 깃 = `github.sec.samsung.net/dongho-yoon/agent_seed` (삼성 사내 GitHub Enterprise, 씨드+키트만 미러).
+- ✅ **(v1.6)** 주요 업무 = 3-5개 인터뷰 시 정의, log.md `[primary:N]`/`[aux]` 태그로 구분.
+- ✅ **(v1.6)** 인스톨러 = 결정론 단일 명령(`install.py`/`install.bat`/`install.sh`), cline 자율성 차단.
 
 ---
 
@@ -201,8 +206,9 @@ v1.0 = "표준 Cline 위에서, **md(설명·규약) + Python(실행·결정론)
 21. ✅ **examples/spec-doc-checker 동기화 검증** — build_graph(24노드/76링크/캐릭터 빌보드 적용), build_flow(5작업/flow.html 15KB), agent-stats(Level 7/XP 800), build_brain_index(pages=14), query_brain("체크리스트" keyword 1건), memory-lint(깨진링크 0), 사내깃--check(main_repo 미설정 안내) — 모두 정상.
 22. ✅ **PLAN.md v0.10 → v0.11** — 헤더 갱신, §7 Phase 1.5 추가, §10 결정 7개 추가, §11 항목 18~21 추가.
 23. ✅ **docs/CHANGELOG-v1.5.md 신규** — 변경 파일별 요약 + 검증 결과 + 업그레이드 안내.
-24. ⏭️ **사용자 실전** — 동료 한 명과 브랜치 송수신·리브랜드 + 3D 그래프 + Brain RAG 사내 환경 확인 → 피드백.
-25. ⏭️ (피드백 후) Phase 2: 사내 깃 메인 첫 운영 절차, 컨셉/도입 문서, 스킬 라이브러리 확충, 씨드 메인 큐레이션 첫 사이클.
+24. ✅ **v1.6 빌드 (2026-05-29)** — 사내 활발 사용 중 발견된 두 가지 문제 해결: ① 주요 업무 ≠ 부수 업무 구분, ② 설치 마찰. 씨드 §1-2.6, build_flow 스윔레인 + 대시보드, agent-stats 처리율, install.py/bat/sh, README "사내 동료 설치" 섹션, 사내 agent_seed URL 박음.
+25. ⏭️ **사용자 실전** — 동료 한 명과 브랜치 송수신·리브랜드 + 3D 그래프 + Brain RAG 사내 환경 확인 → 피드백.
+26. ⏭️ (피드백 후) Phase 2: 사내 깃 메인 첫 운영 절차, 컨셉/도입 문서, 스킬 라이브러리 확충, 씨드 메인 큐레이션 첫 사이클.
 
 ---
 
@@ -245,4 +251,4 @@ v1.0 = "표준 Cline 위에서, **md(설명·규약) + Python(실행·결정론)
 
 ---
 
-*— 코부장 / v0.11. 다음 마디는 사내에서 한 사이클 굴려본 뒤 (Brain RAG + 캐릭터 빌보드 + 사내깃 첫 운영).*
+*— 코부장 / v0.12. 다음 마디는 사내에서 한 사이클 굴려본 뒤 (Brain RAG + 캐릭터 빌보드 + 사내깃 첫 운영). 2026-05-29.*

@@ -1,30 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# agentis-kit: v1.5 / build_flow
+# agentis-kit: v1.6 / build_flow
 """
 build_flow.py — 에이전트의 *업무 흐름*(agentis/memory/log.md 의 작업 연대기)을
-                n8n / make / flowith 스타일의 다이어그램 HTML 로 만든다.
+                스윔레인(swimlane) 다이어그램 HTML 로 만든다. (v1.6 부터)
 
-훑는 대상:  agentis/memory/log.md
-            형식 (한 줄 헤더):  ## [YYYY-MM-DD] <type> | <제목>
-            그 아래 자유 본문 (다음 `## [` 이전까지) — 산출물/스킬 메타 자동 추출:
-              - `[[skills/<name>]]`   → 같은 스킬 사용 = 점선 그룹 엣지
-              - `tokens: N`           → 노드 상세
-              - `sec: T`              → 노드 상세
-              - 첫 줄 한 줄 요약       → 노드 상세
+새 (v1.6):
+  - agent.md 의 `primary_tasks:` (YAML 리스트) 를 파싱해 N개 주요 업무 레인을 만든다.
+  - log.md 의 `[primary:N]` / `[aux]` 태그로 각 항목을 분류한다.
+  - 상단 대시보드: 주요 업무 카드 N개 (처리 횟수 + 마지막 처리 일자 + 최근 토큰 평균).
+  - 스윔레인: N개 가로 레인(주요) + 1개 흐릿한 부수 레인 (맨 아래).
+  - 컬러 코딩: primary 1~5 = 파/초/보/주/분, aux = 회색 50% 투명.
+  - 빈 상태 폴백: primary_tasks 미정의 시 안내 + 단순 시간순 다이어그램.
 
-출력:       agentis/graph/flow.html  (자체완결: SVG + 인라인 JS, 외부 의존 0)
+훑는 대상:
+  agent.md   — `primary_tasks:` 블록 (YAML 들여쓰기 리스트)
+  log.md     — `## [YYYY-MM-DD] <type> [primary:N | aux] | <제목>` 헤더
+                본문에서 tokens: / sec: / [[skills/...]] / [[..]] 자동 추출
 
-엣지:
-  - 시간순(이전 → 다음) 실선 + 화살표  (`time` 클래스, 옅은 파랑)
-  - 같은 skill 을 쓴 항목끼리 점선  (`skill-group` 클래스, 노랑)
-
-인터랙션:
-  - 휠 줌 / 드래그 팬 / 클릭 = 상세 패널
-  - 좌→우 (가로 시간축) ↔ 위→아래 (세로) 토글 버튼
-
-폴백:
-  log.md 가 없거나 항목이 0 개 → "아직 작업 기록이 없어요. 첫 업무를 시작해 보세요." 빈 화면.
+출력:        agentis/graph/flow.html  (자체완결: SVG + 인라인 JS, 외부 의존 0)
 
 표준 라이브러리만 (re, html, json, pathlib, argparse, sys, webbrowser). 외부 패키지 / 외부 CDN 없음.
 
@@ -37,6 +31,7 @@ build_flow.py — 에이전트의 *업무 흐름*(agentis/memory/log.md 의 작�
 from __future__ import annotations
 
 import argparse
+import datetime as _dt
 import html as _html
 import json
 import re
@@ -51,8 +46,10 @@ for _s in (sys.stdout, sys.stderr):
         pass
 
 # ── 파싱 정규식 ─────────────────────────────────────────────────────────
+# 헤더: `## [YYYY-MM-DD] <type> [primary:N | aux] | <제목>`
+# 태그 부분은 선택적. type 다음에 공백 후 [primary:N] 또는 [aux] 가 있을 수도 있고 없을 수도 있다.
 LOG_HEADER_RE = re.compile(
-    r"^##\s*\[(\d{4}-\d{2}-\d{2})\]\s*(\w+)\s*\|\s*(.+?)\s*$",
+    r"^##\s*\[(\d{4}-\d{2}-\d{2})\]\s*(\w+)\s*(?:\[(primary:\d+|aux)\])?\s*\|\s*(.+?)\s*$",
     re.MULTILINE,
 )
 SKILL_LINK_RE = re.compile(r"\[\[skills/([^\[\]|/]+?)(?:\|[^\[\]]*)?\]\]")
@@ -60,7 +57,7 @@ TOKENS_RE = re.compile(r"tokens?\s*[:=]\s*([\d,]+)", re.IGNORECASE)
 SECONDS_RE = re.compile(r"\b(?:sec|seconds?|초)\s*[:=]\s*([\d.]+)", re.IGNORECASE)
 ANY_WIKILINK_RE = re.compile(r"\[\[([^\[\]|]+?)(?:\|[^\[\]]*)?\]\]")
 
-# type → (표시명, 색)
+# type → (표시명, 색)  — aux 분류 시 채도 죽임 (JS 측에서)
 TYPE_STYLE = {
     "setup":  ("부팅",  "#7fd1ff"),
     "task":   ("작업",  "#f0b860"),
@@ -69,8 +66,19 @@ TYPE_STYLE = {
     "lint":   ("정비",  "#c0c0c0"),
     "note":   ("메모",  "#9b8cff"),
     "seed":   ("씨드",  "#e7ecf2"),
+    "push":   ("푸시",  "#7ad6e8"),
     "_other": ("기타",  "#888888"),
 }
+
+# 주요 업무 컬러 팔레트 (1-indexed). aux 는 별도 회색.
+PRIMARY_COLORS = {
+    1: "#3b82f6",   # 진한 파랑
+    2: "#10b981",   # 진한 초록
+    3: "#8b5cf6",   # 진한 보라
+    4: "#f97316",   # 진한 주황
+    5: "#ec4899",   # 진한 분홍
+}
+AUX_COLOR = "#6b7280"   # 회색 50% 투명은 JS 측 opacity 로
 
 
 # ── 루트 / 추출 ─────────────────────────────────────────────────────────
@@ -93,11 +101,101 @@ def extract_agent_name(root: Path) -> str:
     return (m.group(1).strip() if m else "Agentis") or "Agentis"
 
 
+def parse_primary_tasks(agent_text: str) -> list[dict]:
+    """agent.md 의 `primary_tasks:` YAML 블록을 들여쓰기로 파싱.
+    pyyaml 의존 없이 결정론적 mini-parser.
+
+    인식 패턴:
+        primary_tasks:
+          - id: 1
+            name: 짧은 이름
+            description: 한 줄 설명
+            success_metric: 판단 기준
+
+    yaml 코드펜스 안에 있어도 OK (```yaml ... ``` 도 같이 훑는다).
+    """
+    # primary_tasks: 부터 시작해서 다음 들여쓰기 0 인 키 또는 코드펜스 닫힘 또는 비-YAML 헤딩 전까지
+    # 간단하게: 우선 'primary_tasks:' 위치 찾고, 그 뒤 줄들 중 들여쓰기 항목만 모은다.
+    lines = agent_text.splitlines()
+    start = None
+    for i, ln in enumerate(lines):
+        # `primary_tasks:` 가 줄 시작 (들여쓰기 허용) 에 나옴
+        if re.match(r"^\s*primary_tasks\s*:\s*$", ln):
+            start = i + 1
+            break
+    if start is None:
+        return []
+
+    tasks: list[dict] = []
+    cur: dict | None = None
+    end_re_hard = re.compile(r"^(##\s|```|\Z)")   # 마크다운 헤딩 / 코드펜스 종료
+    item_re = re.compile(r"^(\s*)-\s+(.+)$")
+    kv_re = re.compile(r"^(\s*)([A-Za-z_][\w-]*)\s*:\s*(.*)$")
+
+    for j in range(start, len(lines)):
+        ln = lines[j]
+        if end_re_hard.match(ln):
+            break
+        if ln.strip() == "":
+            continue
+        # 주석 라인 무시
+        if ln.lstrip().startswith("#"):
+            continue
+        m_item = item_re.match(ln)
+        if m_item:
+            # 새 항목 시작
+            if cur:
+                tasks.append(cur)
+            cur = {}
+            rest = m_item.group(2).strip()
+            # `- id: 1` 처럼 인라인 key:value 인 경우 처리
+            mkv = re.match(r"^([A-Za-z_][\w-]*)\s*:\s*(.+)$", rest)
+            if mkv:
+                cur[mkv.group(1).lower()] = mkv.group(2).strip().strip("\"'")
+            continue
+        m_kv = kv_re.match(ln)
+        if m_kv and cur is not None:
+            k = m_kv.group(2).lower()
+            v = m_kv.group(3).strip().strip("\"'")
+            # 다른 들여쓰기 0 의 키가 또 나오면 종료 (primary_tasks: 와 같은 레벨)
+            if len(m_kv.group(1)) == 0 and k != "primary_tasks":
+                break
+            cur[k] = v
+            continue
+        # 패턴에 안 맞는 줄 — YAML 블록 종료 추정
+        # 단, '...' 같이 처음에 들여쓰기가 있으면 계속 (continuation)
+        if not ln.startswith(" ") and not ln.startswith("\t"):
+            break
+
+    if cur:
+        tasks.append(cur)
+
+    # 정규화: id 가 없으면 순번 부여, name 없는 항목은 건너뜀
+    out = []
+    for idx, t in enumerate(tasks, start=1):
+        if "name" not in t and "id" not in t:
+            continue
+        try:
+            tid = int(t.get("id", idx))
+        except (TypeError, ValueError):
+            tid = idx
+        name = t.get("name", f"primary {tid}").strip()
+        if not name:
+            continue
+        out.append({
+            "id": tid,
+            "name": name,
+            "description": t.get("description", "").strip(),
+            "success_metric": t.get("success_metric", "").strip(),
+        })
+    # id 로 정렬
+    out.sort(key=lambda x: x["id"])
+    return out
+
+
 def parse_log(log_text: str) -> list[dict]:
-    """log.md 의 `## [날짜] type | 제목` 헤더들을 추출.
-    각 항목의 본문(다음 헤더 직전까지)에서 skills, tokens, sec, 산출물 라인 추출.
-    오래된 것 → 최신 순서를 유지하기 위해 마지막에 역순 정렬은 호출자가 하지 않음;
-    여기서는 *log.md 등장 순서대로* 반환 (최신이 위 = 보통).
+    """log.md 의 `## [날짜] type [primary:N|aux] | 제목` 헤더 추출.
+    각 항목 본문에서 skills/tokens/sec/related 추출.
     """
     headers = list(LOG_HEADER_RE.finditer(log_text))
     entries: list[dict] = []
@@ -105,10 +203,26 @@ def parse_log(log_text: str) -> list[dict]:
         date = m.group(1)
         typ_raw = m.group(2).lower()
         typ = typ_raw if typ_raw in TYPE_STYLE else "_other"
-        title = m.group(3).strip()
+        tag_raw = (m.group(3) or "").lower()
+        title = m.group(4).strip()
         body_start = m.end()
         body_end = headers[i + 1].start() if (i + 1) < len(headers) else len(log_text)
         body = log_text[body_start:body_end].strip()
+
+        # 분류: primary:N 또는 aux. type 이 task 가 아닌 경우 (setup/ingest/skill/lint/note/seed/push) 는 자동 aux.
+        primary_id: int | None = None
+        classification = "aux"
+        if tag_raw.startswith("primary:"):
+            try:
+                primary_id = int(tag_raw.split(":", 1)[1])
+                classification = "primary"
+            except (ValueError, IndexError):
+                pass
+        elif tag_raw == "aux":
+            classification = "aux"
+        else:
+            # 태그 없음: task 면 미분류(aux 취급), 그 외 type 도 aux
+            classification = "aux"
 
         # skills
         skills = sorted({s.lower() for s in SKILL_LINK_RE.findall(body)})
@@ -122,8 +236,8 @@ def parse_log(log_text: str) -> list[dict]:
             except Exception:
                 pass
 
-        # 산출물 / 관련 페이지: 본문의 [[..]] 링크들 (skills 제외)
-        related = []
+        # 관련 페이지
+        related: list[str] = []
         seen_r: set[str] = set()
         for w in ANY_WIKILINK_RE.findall(body):
             w = w.strip()
@@ -134,7 +248,7 @@ def parse_log(log_text: str) -> list[dict]:
             seen_r.add(w)
             related.append(w)
 
-        # 본문 첫 줄 (요약)
+        # 첫 줄 요약
         first_line = ""
         for line in body.splitlines():
             line = line.strip().lstrip("-*").strip()
@@ -154,52 +268,84 @@ def parse_log(log_text: str) -> list[dict]:
             "seconds": round(secs, 2),
             "related": related[:8],
             "body_preview": body[:600],
+            "classification": classification,   # 'primary' | 'aux'
+            "primary_id": primary_id,           # int | None
         })
     return entries
 
 
 # ── 결정론적 노드 → 좌표 매핑 ───────────────────────────────────────────
-# 시간축 = 로그 등장 순서를 *역순으로 사용*. log.md 는 최신이 위라서, 다이어그램에서
-# 왼쪽(=첫 작업) → 오른쪽(=최신 작업) 으로 보이게 하려면 등장 순서를 뒤집어야 함.
-# 여기서는 build 시점에 entries 를 그대로 두고, 별도 `order` 인덱스(과거→현재)를 부여.
 def assign_order(entries: list[dict]) -> list[dict]:
-    """entries 의 등장 순서가 [최신, ..., 과거] 라고 가정.
-    `order` 필드(0=가장 과거 → N-1=최신)와 `lane` 필드(겹침 방지용 채널 0/1/2)를 부여."""
+    """entries 는 log.md 등장 순서 = 보통 [최신, ..., 과거]. 시간 순방향 `order` 부여."""
     n = len(entries)
     out = []
     for i, e in enumerate(entries):
-        order = n - 1 - i  # 등장 순서 역순 = 시간 순방향
+        order = n - 1 - i
         e2 = dict(e)
         e2["order"] = order
-        e2["lane"] = order % 3  # 3 채널로 살짝 지그재그 (가독성)
         out.append(e2)
-    # order 순서로 정렬해서 반환 (옛 → 새)
     out.sort(key=lambda x: x["order"])
     return out
+
+
+def _avg_recent_tokens(entries: list[dict], primary_id: int, k: int = 5) -> int:
+    """해당 primary 의 가장 최근 k 개 항목 평균 토큰. 토큰 0 항목 제외."""
+    its = [e for e in entries if e.get("classification") == "primary" and e.get("primary_id") == primary_id and e.get("tokens")]
+    its.sort(key=lambda x: x.get("date", ""), reverse=True)
+    its = its[:k]
+    if not its:
+        return 0
+    return int(sum(e["tokens"] for e in its) / len(its))
+
+
+def _last_date(entries: list[dict], primary_id: int) -> str:
+    its = [e for e in entries if e.get("classification") == "primary" and e.get("primary_id") == primary_id]
+    if not its:
+        return ""
+    return max(e["date"] for e in its)
 
 
 def build(root: Path) -> dict:
     log_path = root / "memory" / "log.md"
     agent_name = extract_agent_name(root)
+
+    # primary_tasks
+    primary_tasks: list[dict] = []
+    agent_path = root / "agent.md"
+    if agent_path.is_file():
+        agent_text = agent_path.read_text(encoding="utf-8", errors="replace")
+        primary_tasks = parse_primary_tasks(agent_text)
+
     if not log_path.is_file():
-        return {"agent": agent_name, "entries": [], "edges_time": [], "edges_skill": [],
-                "by_type": {}, "skills_used": [], "empty_reason": "log.md 가 아직 없음"}
+        return {
+            "agent": agent_name, "entries": [], "edges_time": [], "edges_skill": [],
+            "by_type": {}, "skills_used": [], "primary_tasks": primary_tasks,
+            "primary_stats": [], "empty_reason": "log.md 가 아직 없음",
+            "types": {k: {"label": v[0], "color": v[1]} for k, v in TYPE_STYLE.items()},
+            "primary_colors": PRIMARY_COLORS, "aux_color": AUX_COLOR,
+            "counts": {"primary": 0, "aux": 0, "total": 0, "primary_30d": 0, "aux_30d": 0},
+        }
 
     text = log_path.read_text(encoding="utf-8", errors="replace")
     raw = parse_log(text)
     if not raw:
-        return {"agent": agent_name, "entries": [], "edges_time": [], "edges_skill": [],
-                "by_type": {}, "skills_used": [], "empty_reason": "log.md 에 항목이 없음"}
+        return {
+            "agent": agent_name, "entries": [], "edges_time": [], "edges_skill": [],
+            "by_type": {}, "skills_used": [], "primary_tasks": primary_tasks,
+            "primary_stats": [], "empty_reason": "log.md 에 항목이 없음",
+            "types": {k: {"label": v[0], "color": v[1]} for k, v in TYPE_STYLE.items()},
+            "primary_colors": PRIMARY_COLORS, "aux_color": AUX_COLOR,
+            "counts": {"primary": 0, "aux": 0, "total": 0, "primary_30d": 0, "aux_30d": 0},
+        }
 
     entries = assign_order(raw)
 
-    # 시간순 엣지
+    # 시간순 엣지 (전체 — orientation 은 JS 에서)
     edges_time = []
     for i in range(len(entries) - 1):
         edges_time.append({"source": entries[i]["id"], "target": entries[i + 1]["id"]})
 
-    # 스킬 그룹 엣지 (같은 skill 을 쓴 항목끼리 모든 쌍 — 단, 인접 쌍만 두면 너무 적고 모든 쌍이면 너무 많아짐)
-    # 절충: 같은 skill 의 *연속 사용* 만 (시간순으로 인접한 동일 스킬 사용 쌍).
+    # 스킬 그룹 엣지 (시간순 인접 동일 스킬)
     edges_skill = []
     skill_to_entries: dict[str, list[dict]] = {}
     for e in entries:
@@ -211,10 +357,43 @@ def build(root: Path) -> dict:
         for i in range(len(es_sorted) - 1):
             edges_skill.append({"source": es_sorted[i]["id"], "target": es_sorted[i + 1]["id"], "skill": s})
 
-    # 통계
+    # type 통계
     by_type: dict[str, int] = {}
     for e in entries:
         by_type[e["type"]] = by_type.get(e["type"], 0) + 1
+
+    # 카운트 (총 / 최근 30일)
+    today = _dt.date.today()
+    primary_n = sum(1 for e in entries if e["classification"] == "primary")
+    aux_n = len(entries) - primary_n
+    primary_30d = 0
+    aux_30d = 0
+    for e in entries:
+        try:
+            d = _dt.date.fromisoformat(e["date"])
+        except ValueError:
+            continue
+        if (today - d).days <= 30:
+            if e["classification"] == "primary":
+                primary_30d += 1
+            else:
+                aux_30d += 1
+
+    # 주요 업무별 통계 (대시보드 카드용)
+    primary_stats = []
+    for pt in primary_tasks:
+        pid = pt["id"]
+        count = sum(1 for e in entries if e.get("primary_id") == pid)
+        primary_stats.append({
+            "id": pid,
+            "name": pt["name"],
+            "description": pt.get("description", ""),
+            "success_metric": pt.get("success_metric", ""),
+            "count": count,
+            "last_date": _last_date(entries, pid),
+            "avg_tokens": _avg_recent_tokens(entries, pid),
+            "color": PRIMARY_COLORS.get(pid, AUX_COLOR),
+        })
 
     return {
         "agent": agent_name,
@@ -223,8 +402,19 @@ def build(root: Path) -> dict:
         "edges_skill": edges_skill,
         "by_type": by_type,
         "skills_used": skills_used,
+        "primary_tasks": primary_tasks,
+        "primary_stats": primary_stats,
         "empty_reason": None,
         "types": {k: {"label": v[0], "color": v[1]} for k, v in TYPE_STYLE.items()},
+        "primary_colors": PRIMARY_COLORS,
+        "aux_color": AUX_COLOR,
+        "counts": {
+            "primary": primary_n,
+            "aux": aux_n,
+            "total": len(entries),
+            "primary_30d": primary_30d,
+            "aux_30d": aux_30d,
+        },
     }
 
 
@@ -234,21 +424,22 @@ EMPTY_HTML = r"""<!doctype html>
 <style>
   html,body{margin:0;height:100%;background:#070a10;color:#cdd3da;font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center}
   h1{font-size:18px;color:#e7ecf2;margin:0 0 8px}
-  p{color:#7c8693;margin:4px 0;max-width:520px;padding:0 20px}
+  p{color:#7c8693;margin:4px 0;max-width:560px;padding:0 20px}
   .em{color:#f0b860}
+  code{background:#1a2029;color:#f0b860;padding:1px 5px;border-radius:3px;font-size:11px}
   .brand{position:fixed;left:14px;bottom:12px;color:#3a414c;font-size:10px}
 </style></head>
 <body>
-<h1>📋 __AGENT__ — 업무 흐름 다이어그램</h1>
-<p>아직 작업 기록이 없어요. 첫 업무를 시작해 보세요.</p>
-<p class="em">tip: 작업을 마칠 때마다 <code>agentis/memory/log.md</code> 맨 위에<br>
-<code>## [YYYY-MM-DD] task | 제목</code> 형식으로 한 줄씩 쌓이면<br>
-이 다이어그램이 자동으로 채워집니다.</p>
-<div class="brand">Agentis v1.5 · build_flow.py · 자체완결 (외부 의존 0)</div>
+<h1>🎯 __AGENT__ — 업무 흐름 (스윔레인)</h1>
+<p>__EMPTY_MSG__</p>
+<p class="em">tip: 주요 업무를 먼저 정의하세요 — <code>agentis/agent.md</code> 의<br>
+<code>primary_tasks:</code> 블록에 3~5개 항목을 채우면<br>
+이 다이어그램이 스윔레인으로 자동 구성됩니다.</p>
+<div class="brand">Agentis v1.6 · build_flow.py · 자체완결 (외부 의존 0)</div>
 </body></html>
 """
 
-# 본 다이어그램은 인라인 SVG + 인라인 JS. 외부 라이브러리 없음.
+# 본 다이어그램: 인라인 SVG + 인라인 JS. 외부 라이브러리 없음.
 MAIN_HTML = r"""<!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><title>__TITLE__</title>
 <style>
@@ -256,46 +447,80 @@ MAIN_HTML = r"""<!doctype html>
   #wrap{position:fixed;inset:0}
   svg{width:100%;height:100%;display:block;background:#070a10;cursor:grab}
   svg.dragging{cursor:grabbing}
-  #hud{position:fixed;left:14px;top:12px;z-index:10;background:rgba(14,17,22,.82);border:1px solid #2a313c;border-radius:10px;padding:12px 14px;backdrop-filter:blur(6px);max-width:320px}
-  #hud h1{font-size:13px;margin:0 0 6px;color:#e7ecf2;letter-spacing:.04em;font-weight:600}
-  #hud .stat{color:#8b95a1;font-size:11px;margin-bottom:6px}
-  #legend{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:6px}
-  #legend span{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#9aa4af}
-  #legend i{width:9px;height:9px;border-radius:50%;display:inline-block}
-  #toggles{margin-top:10px;display:flex;flex-direction:column;gap:5px}
-  #toggles button{background:#1a2029;border:1px solid #2a313c;color:#cdd3da;padding:5px 9px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit}
+
+  /* 상단 헤더 한 줄 */
+  #topbar{position:fixed;left:0;right:0;top:0;height:36px;background:rgba(8,11,17,.95);border-bottom:1px solid #1a2029;display:flex;align-items:center;padding:0 16px;z-index:11;font-size:12px;color:#9aa4af;letter-spacing:.01em}
+  #topbar b{color:#e7ecf2;font-weight:600}
+  #topbar .sep{color:#3a414c;margin:0 10px}
+
+  /* 좌측 대시보드 — 주요 업무 카드 */
+  #dash{position:fixed;left:14px;top:50px;z-index:10;display:flex;flex-direction:column;gap:7px;max-width:280px}
+  .card{background:rgba(14,17,22,.86);border:1px solid #2a313c;border-left-width:4px;border-radius:8px;padding:9px 11px;backdrop-filter:blur(6px);transition:transform .12s,border-color .12s}
+  .card:hover{transform:translateX(2px);border-color:#7fd1ff}
+  .card .ttl{font-size:12px;font-weight:600;color:#e7ecf2;line-height:1.3;margin-bottom:3px}
+  .card .meta{font-size:10.5px;color:#7c8693;line-height:1.5}
+  .card .badge{display:inline-block;font-family:'JetBrains Mono',Consolas,monospace;font-size:9.5px;color:#0a0d12;padding:1px 6px;border-radius:3px;font-weight:600;margin-right:6px}
+  .card.aux{border-left-color:__AUX_COLOR__;opacity:.66}
+  .card.aux .ttl{color:#9aa4af}
+
+  /* 토글 + 범례 */
+  #ctrls{position:fixed;right:14px;top:50px;z-index:10;background:rgba(14,17,22,.82);border:1px solid #2a313c;border-radius:10px;padding:10px 12px;backdrop-filter:blur(6px);max-width:260px}
+  #ctrls h2{font-size:11px;margin:0 0 6px;color:#9aa4af;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+  #legend{display:flex;flex-wrap:wrap;gap:5px 9px;margin-bottom:8px}
+  #legend span{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;color:#9aa4af}
+  #legend i{width:8px;height:8px;border-radius:50%;display:inline-block}
+  #toggles{display:flex;flex-direction:column;gap:4px}
+  #toggles button{background:#1a2029;border:1px solid #2a313c;color:#cdd3da;padding:4px 8px;border-radius:5px;font-size:11px;cursor:pointer;font-family:inherit;text-align:left}
   #toggles button:hover{background:#222a35;border-color:#3a414c}
   #toggles button.active{background:#1f2d3a;border-color:#7fd1ff;color:#7fd1ff}
+
   #hint{position:fixed;right:14px;bottom:12px;color:#5b6470;font-size:11px;z-index:10;text-align:right}
   #brand{position:fixed;left:14px;bottom:12px;color:#3a414c;font-size:10px;z-index:10}
-  #info{position:fixed;right:14px;top:12px;z-index:10;background:rgba(14,17,22,.92);border:1px solid #2a313c;border-radius:10px;padding:14px 16px;backdrop-filter:blur(6px);max-width:380px;display:none;max-height:80vh;overflow:auto}
+  #info{position:fixed;right:14px;top:50px;z-index:12;background:rgba(14,17,22,.96);border:1px solid #2a313c;border-radius:10px;padding:14px 16px;backdrop-filter:blur(6px);max-width:380px;display:none;max-height:75vh;overflow:auto}
   #info h2{font-size:14px;margin:0 0 4px;color:#e7ecf2;font-weight:600;word-break:break-all}
   #info .meta{color:#7c8693;font-size:11px;margin-bottom:8px}
   #info .row{margin:6px 0;font-size:12px;color:#aeb6bf}
   #info .row b{color:#9aa4af;font-size:10px;letter-spacing:.06em;display:block;margin-bottom:2px}
   #info code{background:#1a2029;padding:1px 5px;border-radius:3px;font-size:11px;color:#f0b860}
+  #info .closeX{position:absolute;top:6px;right:10px;background:none;border:0;color:#5b6470;font-size:14px;cursor:pointer}
+
+  /* 스윔레인 */
+  .lane-band{fill:#0c1018;stroke:#1a2029;stroke-width:1}
+  .lane-band.aux{fill:#0a0d12;opacity:.55}
+  .lane-label{fill:#9aa4af;font-size:11px;font-weight:600;font-family:inherit}
+  .lane-sub{fill:#5b6470;font-size:9.5px;font-family:inherit}
+  .lane-divider{stroke:#1a2029;stroke-width:1;stroke-dasharray:3 4}
+
+  /* 노드 */
   .node-rect{stroke:#1a2029;stroke-width:1.5;cursor:pointer;transition:stroke .15s}
   .node-rect:hover{stroke:#fff;stroke-width:2}
   .node-rect.sel{stroke:#fff;stroke-width:2.5}
+  .node-rect.aux{opacity:.5}
   .node-text{fill:#0a0d12;font-size:11px;font-weight:600;pointer-events:none;font-family:inherit}
   .node-date{fill:#0a0d12;font-size:9px;opacity:.7;pointer-events:none;font-family:inherit}
-  .edge-time{stroke:#7fd1ff;stroke-width:1.4;fill:none;opacity:.55}
-  .edge-skill{stroke:#f0b860;stroke-width:1.0;stroke-dasharray:4 4;fill:none;opacity:.4}
+  .node-text.aux{fill:#e7ecf2;opacity:.85}
+  .node-date.aux{fill:#9aa4af}
+
+  /* 엣지 */
+  .edge-time{stroke:#7fd1ff;stroke-width:1.2;fill:none;opacity:.42}
+  .edge-skill{stroke:#f0b860;stroke-width:0.9;stroke-dasharray:4 4;fill:none;opacity:.35}
 </style></head>
 <body>
+<div id="topbar"></div>
 <div id="wrap">
-<div id="hud">
-  <h1>📋 __AGENT__ — 업무 흐름</h1>
-  <div class="stat" id="stat"></div>
+<div id="dash"></div>
+<div id="ctrls">
+  <h2>범례</h2>
   <div id="legend"></div>
+  <h2>레이아웃</h2>
   <div id="toggles">
-    <button id="btn-horiz" class="active">좌 → 우 (시간축 가로)</button>
+    <button id="btn-horiz" class="active">좌 → 우 (시간축 가로 + 스윔레인)</button>
     <button id="btn-vert">위 → 아래 (시간축 세로)</button>
   </div>
 </div>
-<div id="info"></div>
+<div id="info"><button class="closeX" id="closeInfo">×</button><div id="infoBody"></div></div>
 <div id="hint">드래그 = 이동 · 휠 = 줌 · 노드 = 상세</div>
-<div id="brand">Agentis v1.5 · build_flow.py · 자체완결 (외부 의존 0)</div>
+<div id="brand">Agentis v1.6 · build_flow.py · 자체완결 (외부 의존 0)</div>
 <svg id="svg" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <marker id="arrow-time" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
@@ -303,6 +528,7 @@ MAIN_HTML = r"""<!doctype html>
     </marker>
   </defs>
   <g id="viewport">
+    <g id="lanes"></g>
     <g id="edges"></g>
     <g id="nodes"></g>
   </g>
@@ -311,38 +537,149 @@ MAIN_HTML = r"""<!doctype html>
 <script>
 const DATA = __DATA__;
 const TYPES = DATA.types;
+const PRIMARY_COLORS = DATA.primary_colors || {};
+const AUX_COLOR = DATA.aux_color || '#6b7280';
+const HAS_PRIMARY = (DATA.primary_tasks && DATA.primary_tasks.length > 0);
 
 // ── 레이아웃 ────────────────────────────────────────────────────────
-const NODE_W = 200, NODE_H = 56, GAP_X = 90, GAP_Y = 96;
-let orientation = 'horiz';  // 'horiz' | 'vert'
+const NODE_W = 200, NODE_H = 48, GAP_X = 70, GAP_Y = 82;
+const LANE_H = 92;       // 스윔레인 한 칸 높이
+const LANE_LBL_W = 180;  // 레인 라벨 영역 너비
+const TOP_PAD = 20;
+let orientation = 'horiz';  // 'horiz' = 스윔레인 가로, 'vert' = 시간축 세로 (단순)
 
-function laidOut() {
+// 레인 정의: HAS_PRIMARY 면 primary N + aux. 아니면 단일 레인.
+function buildLanes() {
+  const lanes = [];
+  if (HAS_PRIMARY) {
+    DATA.primary_tasks.forEach((t, idx) => {
+      lanes.push({
+        kind: 'primary',
+        id: t.id,
+        name: t.name,
+        sub: t.description || '',
+        color: PRIMARY_COLORS[t.id] || AUX_COLOR,
+        yIndex: idx,
+      });
+    });
+    lanes.push({
+      kind: 'aux',
+      id: 'aux',
+      name: '부수 업무 (aux)',
+      sub: '주요 업무 외 모든 작업 (자동/수동 분류)',
+      color: AUX_COLOR,
+      yIndex: lanes.length,
+    });
+  } else {
+    lanes.push({
+      kind: 'all',
+      id: 'all',
+      name: '전체 작업',
+      sub: 'primary_tasks 미정의 — 단순 시간순',
+      color: '#7fd1ff',
+      yIndex: 0,
+    });
+  }
+  return lanes;
+}
+
+function laneFor(entry, lanes) {
+  if (!HAS_PRIMARY) return lanes[0];
+  if (entry.classification === 'primary' && entry.primary_id != null) {
+    const ln = lanes.find(l => l.kind === 'primary' && l.id === entry.primary_id);
+    if (ln) return ln;
+  }
+  return lanes.find(l => l.kind === 'aux') || lanes[lanes.length - 1];
+}
+
+function laidOut(lanes) {
   const n = DATA.entries.length;
-  return DATA.entries.map((e, i) => {
-    const ord = e.order;  // 0 = 가장 옛, n-1 = 가장 최신
-    const laneOffset = (e.lane - 1) * (NODE_H + 22);
+  return DATA.entries.map((e) => {
+    const ord = e.order;
     if (orientation === 'horiz') {
+      const lane = laneFor(e, lanes);
+      const ly = TOP_PAD + lane.yIndex * LANE_H + (LANE_H - NODE_H) / 2;
       return Object.assign({}, e, {
-        x: 60 + ord * (NODE_W + GAP_X),
-        y: 220 + laneOffset
+        x: LANE_LBL_W + 30 + ord * (NODE_W + GAP_X),
+        y: ly,
+        laneId: lane.id,
+        laneKind: lane.kind,
       });
     } else {
+      // 세로 모드 — 단순 시간축. lane 무시 (대신 type 별 컬럼)
       return Object.assign({}, e, {
-        x: 200 + (e.lane - 1) * (NODE_W + 30),
-        y: 60 + ord * (NODE_H + GAP_Y)
+        x: 220 + ((e.order % 3) - 1) * (NODE_W + 30),
+        y: 60 + ord * (NODE_H + GAP_Y),
+        laneId: 'vert',
+        laneKind: e.classification,
       });
     }
   });
 }
 
 function render() {
-  const positioned = laidOut();
+  const lanes = buildLanes();
+  const positioned = laidOut(lanes);
   const byId = Object.fromEntries(positioned.map(p => [p.id, p]));
 
+  const lanesG = document.getElementById('lanes');
   const edgesG = document.getElementById('edges');
   const nodesG = document.getElementById('nodes');
+  lanesG.innerHTML = '';
   edgesG.innerHTML = '';
   nodesG.innerHTML = '';
+
+  // 스윔레인 밴드 (가로 모드만)
+  if (orientation === 'horiz') {
+    const lastOrd = Math.max(0, DATA.entries.length - 1);
+    const totalW = LANE_LBL_W + 30 + (lastOrd + 1) * (NODE_W + GAP_X) + 100;
+    lanes.forEach((ln, i) => {
+      const y = TOP_PAD + i * LANE_H;
+      const band = svgEl('rect', {
+        class: 'lane-band' + (ln.kind === 'aux' ? ' aux' : ''),
+        x: 0, y: y, width: totalW, height: LANE_H,
+      });
+      lanesG.appendChild(band);
+
+      // 왼쪽 컬러 스트라이프
+      const stripe = svgEl('rect', {
+        x: 0, y: y, width: 4, height: LANE_H, fill: ln.color, opacity: ln.kind === 'aux' ? 0.5 : 0.95,
+      });
+      lanesG.appendChild(stripe);
+
+      // 라벨
+      const lbl = svgEl('text', {
+        class: 'lane-label', x: 14, y: y + 22,
+      });
+      lbl.textContent = ln.kind === 'primary' ? `[primary:${ln.id}] ${ln.name}` : ln.name;
+      lanesG.appendChild(lbl);
+
+      const sub = svgEl('text', {
+        class: 'lane-sub', x: 14, y: y + 38,
+      });
+      sub.textContent = truncate(ln.sub, 28);
+      lanesG.appendChild(sub);
+
+      // 카운트 배지
+      const cnt = DATA.entries.filter(e => {
+        const elane = laneFor(e, lanes);
+        return elane.id === ln.id && elane.kind === ln.kind;
+      }).length;
+      const cntT = svgEl('text', {
+        class: 'lane-sub', x: 14, y: y + 56,
+      });
+      cntT.textContent = `처리 ${cnt}건`;
+      lanesG.appendChild(cntT);
+
+      // 디바이더 (마지막 제외)
+      if (i < lanes.length - 1) {
+        const div = svgEl('line', {
+          class: 'lane-divider', x1: LANE_LBL_W, y1: y + LANE_H, x2: totalW, y2: y + LANE_H,
+        });
+        lanesG.appendChild(div);
+      }
+    });
+  }
 
   // 엣지 — 스킬 (밑에 깔리도록 먼저)
   DATA.edges_skill.forEach(ed => {
@@ -365,20 +702,32 @@ function render() {
 
   // 노드
   positioned.forEach(p => {
+    const isAux = (p.classification === 'aux');
+    const fill = (HAS_PRIMARY && p.classification === 'primary' && p.primary_id != null)
+      ? (PRIMARY_COLORS[p.primary_id] || AUX_COLOR)
+      : (isAux ? AUX_COLOR : (TYPES[p.type] || TYPES._other).color);
+
     const g = svgEl('g', { transform: `translate(${p.x},${p.y})`, 'data-id': p.id });
-    const ty = TYPES[p.type] || TYPES._other;
     const rect = svgEl('rect', {
-      class: 'node-rect', width: NODE_W, height: NODE_H, rx: 8, ry: 8,
-      fill: ty.color
+      class: 'node-rect' + (isAux ? ' aux' : ''), width: NODE_W, height: NODE_H, rx: 7, ry: 7,
+      fill: fill,
     });
     g.appendChild(rect);
 
-    const title = svgEl('text', { class: 'node-text', x: 10, y: 22 });
+    const title = svgEl('text', {
+      class: 'node-text' + (isAux ? ' aux' : ''),
+      x: 10, y: 19,
+    });
     title.textContent = truncate(p.title, 26);
     g.appendChild(title);
 
-    const sub = svgEl('text', { class: 'node-date', x: 10, y: 40 });
-    sub.textContent = `[${p.date}] ${ty.label}` + (p.skills.length ? ` · 🔧${p.skills.length}` : '');
+    const ty = TYPES[p.type] || TYPES._other;
+    const sub = svgEl('text', {
+      class: 'node-date' + (isAux ? ' aux' : ''),
+      x: 10, y: 35,
+    });
+    const tag = (p.classification === 'primary' && p.primary_id != null) ? `[p${p.primary_id}]` : '[aux]';
+    sub.textContent = `${tag} [${p.date}] ${ty.label}` + (p.skills.length ? ` · 🔧${p.skills.length}` : '');
     g.appendChild(sub);
 
     g.addEventListener('click', (ev) => {
@@ -390,13 +739,12 @@ function render() {
     nodesG.appendChild(g);
   });
 
-  fitView(positioned);
+  fitView(positioned, lanes);
 }
 
 function pathBetween(s, t, curved) {
   const sx = s.x + NODE_W, sy = s.y + NODE_H / 2;
   const tx = t.x, ty = t.y + NODE_H / 2;
-  // 세로 모드면 출발/도착 점을 위/아래로
   let ax, ay, bx, by;
   if (orientation === 'horiz') {
     ax = sx; ay = sy; bx = tx; by = ty;
@@ -423,21 +771,28 @@ function truncate(s, n) {
 
 // ── 상세 패널 ──────────────────────────────────────────────────────
 const info = document.getElementById('info');
+const infoBody = document.getElementById('infoBody');
 function showDetail(p) {
   const ty = TYPES[p.type] || TYPES._other;
   const skills = p.skills.length ? p.skills.map(s => `<code>skills/${esc(s)}</code>`).join(' ') : '<i style="color:#5b6470">없음</i>';
   const related = p.related.length ? p.related.map(r => `<code>${esc(r)}</code>`).join(' ') : '<i style="color:#5b6470">없음</i>';
   const tokens = p.tokens ? p.tokens.toLocaleString() + ' tok' : '미기록';
   const secs = p.seconds ? p.seconds + ' s' : '미기록';
+  const cls = (p.classification === 'primary' && p.primary_id != null)
+    ? `<span style="color:${esc(PRIMARY_COLORS[p.primary_id] || AUX_COLOR)};font-weight:600">[primary:${p.primary_id}]</span>`
+    : '<span style="color:#9aa4af">[aux]</span>';
   info.style.display = 'block';
-  info.innerHTML =
+  infoBody.innerHTML =
     `<h2>${esc(p.title)}</h2>` +
-    `<div class="meta">[${esc(p.date)}] · ${esc(ty.label)} (${esc(p.type_raw)}) · #${p.order + 1}</div>` +
+    `<div class="meta">${cls} · [${esc(p.date)}] · ${esc(ty.label)} (${esc(p.type_raw)}) · #${p.order + 1}</div>` +
     `<div class="row"><b>요약</b>${esc(p.summary || '(본문 첫 줄 없음)')}</div>` +
     `<div class="row"><b>사용 스킬</b>${skills}</div>` +
     `<div class="row"><b>관련 페이지</b>${related}</div>` +
     `<div class="row"><b>토큰 · 시간</b>${tokens} · ${secs}</div>`;
 }
+document.getElementById('closeInfo').addEventListener('click', () => {
+  info.style.display = 'none';
+});
 document.getElementById('svg').addEventListener('click', () => {
   info.style.display = 'none';
   document.querySelectorAll('.node-rect.sel').forEach(n => n.classList.remove('sel'));
@@ -454,18 +809,27 @@ let vx = 0, vy = 0, vz = 1;
 function applyView() {
   viewport.setAttribute('transform', `translate(${vx},${vy}) scale(${vz})`);
 }
-function fitView(positioned) {
+function fitView(positioned, lanes) {
   if (!positioned.length) return;
-  const xs = positioned.map(p => p.x);
-  const ys = positioned.map(p => p.y);
-  const minX = Math.min(...xs), maxX = Math.max(...xs) + NODE_W;
-  const minY = Math.min(...ys), maxY = Math.max(...ys) + NODE_H;
+  let minX, minY, maxX, maxY;
+  if (orientation === 'horiz' && lanes && lanes.length) {
+    minX = 0;
+    maxX = LANE_LBL_W + 30 + DATA.entries.length * (NODE_W + GAP_X) + 60;
+    minY = 0;
+    maxY = TOP_PAD + lanes.length * LANE_H + 20;
+  } else {
+    const xs = positioned.map(p => p.x);
+    const ys = positioned.map(p => p.y);
+    minX = Math.min(...xs); maxX = Math.max(...xs) + NODE_W;
+    minY = Math.min(...ys); maxY = Math.max(...ys) + NODE_H;
+  }
   const w = svg.clientWidth || window.innerWidth;
   const h = svg.clientHeight || window.innerHeight;
-  const pad = 80;
-  vz = Math.min((w - pad * 2) / Math.max(1, maxX - minX), (h - pad * 2) / Math.max(1, maxY - minY), 1.2);
-  vx = pad - minX * vz + (w - pad * 2 - (maxX - minX) * vz) / 2;
-  vy = pad - minY * vz + (h - pad * 2 - (maxY - minY) * vz) / 2;
+  const padL = 320, padR = 290, padT = 70, padB = 50;
+  vz = Math.min((w - padL - padR) / Math.max(1, maxX - minX), (h - padT - padB) / Math.max(1, maxY - minY), 1.0);
+  if (!isFinite(vz) || vz <= 0) vz = 1;
+  vx = padL - minX * vz;
+  vy = padT - minY * vz + Math.max(0, (h - padT - padB - (maxY - minY) * vz) / 2);
   applyView();
 }
 svg.addEventListener('wheel', (e) => {
@@ -506,21 +870,51 @@ document.getElementById('btn-vert').addEventListener('click', () => {
   render();
 });
 
-// ── HUD 채우기 ─────────────────────────────────────────────────────
-document.getElementById('stat').textContent =
-  `${DATA.entries.length} 작업 · 시간엣지 ${DATA.edges_time.length} · 스킬그룹엣지 ${DATA.edges_skill.length} · 스킬 ${DATA.skills_used.length}종`;
+// ── 상단 헤더 한 줄 ────────────────────────────────────────────────
+const tbar = document.getElementById('topbar');
+const c = DATA.counts;
+const pn = (DATA.primary_tasks || []).length;
+tbar.innerHTML =
+  `<b>🎯 ${esc(DATA.agent)}</b><span class="sep">·</span>` +
+  `주요 업무 <b>${pn}</b>개<span class="sep">·</span>` +
+  `처리 <b>${c.primary_30d}</b>건 (지난 30일)<span class="sep">·</span>` +
+  `부수 업무 <b>${c.aux_30d}</b>건<span class="sep">·</span>` +
+  `<span style="color:#5b6470">총 ${c.total}건 (주요 ${c.primary} / 부수 ${c.aux})</span>`;
 
+// ── 좌측 대시보드 카드 ──────────────────────────────────────────────
+const dash = document.getElementById('dash');
+(DATA.primary_stats || []).forEach(s => {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.style.borderLeftColor = s.color;
+  const avgTok = s.avg_tokens ? `${s.avg_tokens.toLocaleString()} tok` : '—';
+  card.innerHTML =
+    `<div class="ttl"><span class="badge" style="background:${esc(s.color)}">p${s.id}</span>${esc(s.name)}</div>` +
+    `<div class="meta">처리 <b style="color:#cdd3da">${s.count}</b>건 · 최근 ${esc(s.last_date || '미처리')}<br>` +
+    `최근 토큰 평균 ${avgTok}</div>`;
+  dash.appendChild(card);
+});
+// 부수 카드
+if (DATA.counts.aux > 0) {
+  const auxCard = document.createElement('div');
+  auxCard.className = 'card aux';
+  auxCard.innerHTML =
+    `<div class="ttl"><span class="badge" style="background:${esc(AUX_COLOR)}">aux</span>부수 업무</div>` +
+    `<div class="meta">처리 <b style="color:#9aa4af">${DATA.counts.aux}</b>건 · 지난 30일 ${DATA.counts.aux_30d}건</div>`;
+  dash.appendChild(auxCard);
+}
+
+// ── 범례 채우기 ───────────────────────────────────────────────────
 const legend = document.getElementById('legend');
-const usedTypes = [...new Set(DATA.entries.map(e => e.type))];
-usedTypes.sort();
-legend.innerHTML = usedTypes.map(t => {
-  const s = TYPES[t] || TYPES._other;
-  const k = DATA.by_type[t] || 0;
-  return `<span><i style="background:${s.color}"></i>${esc(s.label)} ${k}</span>`;
-}).join('');
+const legParts = [];
+(DATA.primary_tasks || []).forEach(t => {
+  legParts.push(`<span><i style="background:${esc(PRIMARY_COLORS[t.id] || AUX_COLOR)}"></i>p${t.id}</span>`);
+});
+legParts.push(`<span><i style="background:${esc(AUX_COLOR)};opacity:.5"></i>aux</span>`);
+legend.innerHTML = legParts.join('');
 
 render();
-window.addEventListener('resize', () => fitView(laidOut()));
+window.addEventListener('resize', () => fitView(laidOut(buildLanes()), buildLanes()));
 </script>
 </body></html>
 """
@@ -528,14 +922,20 @@ window.addEventListener('resize', () => fitView(laidOut()));
 
 def write_outputs(graph: dict, out_dir: Path) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
-    title = f"{graph['agent']} — 업무 흐름 (Agentis)"
+    title = f"{graph['agent']} — 업무 흐름 (Agentis 스윔레인)"
     safe_title = _html.escape(title)
     safe_agent = _html.escape(graph["agent"])
 
     if not graph["entries"]:
-        html = EMPTY_HTML.replace("__TITLE__", safe_title).replace("__AGENT__", safe_agent)
+        # 빈 상태: log 없음 또는 primary_tasks 없음 모두
+        msg = "아직 작업 기록이 없어요. 첫 업무를 시작해 보세요."
+        if graph.get("empty_reason"):
+            msg = graph["empty_reason"] + " — 첫 업무를 시작해 보세요."
+        html = (EMPTY_HTML
+                .replace("__TITLE__", safe_title)
+                .replace("__AGENT__", safe_agent)
+                .replace("__EMPTY_MSG__", _html.escape(msg)))
     else:
-        # JSON 페이로드에 들어가지 않아도 되는 필드(body_preview)는 자르고, 나머지는 그대로
         payload = {
             "agent": graph["agent"],
             "entries": [{k: v for k, v in e.items() if k != "body_preview"} for e in graph["entries"]],
@@ -543,12 +943,20 @@ def write_outputs(graph: dict, out_dir: Path) -> Path:
             "edges_skill": graph["edges_skill"],
             "by_type": graph["by_type"],
             "skills_used": graph["skills_used"],
+            "primary_tasks": graph["primary_tasks"],
+            "primary_stats": graph["primary_stats"],
+            "primary_colors": {str(k): v for k, v in graph["primary_colors"].items()},
+            "aux_color": graph["aux_color"],
+            "counts": graph["counts"],
             "types": graph["types"],
         }
+        # JS 는 obj 의 키를 str/num 동일 처리하지만, JSON.parse 시 모두 str. lookup 을 obj[pid] (num key) 가 아닌
+        # obj[String(pid)] 로 하도록 PRIMARY_COLORS 사용 측에서 처리.
         data_json = json.dumps(payload, ensure_ascii=False)
         html = MAIN_HTML
         html = html.replace("__TITLE__", safe_title)
         html = html.replace("__AGENT__", safe_agent)
+        html = html.replace("__AUX_COLOR__", graph["aux_color"])
         html = html.replace("__DATA__", data_json)
 
     html_path = out_dir / "flow.html"
@@ -558,7 +966,7 @@ def write_outputs(graph: dict, out_dir: Path) -> Path:
 
 def main(argv=None) -> int:
     here = Path(__file__).resolve().parent  # .../agentis/graph
-    ap = argparse.ArgumentParser(description="agentis 의 업무 흐름을 flow.html 로 빌드")
+    ap = argparse.ArgumentParser(description="agentis 의 업무 흐름을 flow.html (스윔레인) 로 빌드")
     ap.add_argument("--root", type=Path, default=here.parent, help="agentis 디렉토리 (기본: 스크립트 기준 ../)")
     ap.add_argument("--out", type=Path, default=here, help="출력 디렉토리 (기본: 스크립트 폴더)")
     ap.add_argument("--open", action="store_true", help="만든 뒤 flow.html 을 브라우저로 연다")
@@ -573,11 +981,16 @@ def main(argv=None) -> int:
     html_path = write_outputs(graph, args.out.resolve())
 
     n = len(graph["entries"])
+    pn = len(graph["primary_tasks"])
     print(f"[build_flow] root={root}")
     if n == 0:
-        print(f"[build_flow] {graph.get('empty_reason') or '항목 없음'} — 빈 폴백 HTML 생성")
+        print(f"[build_flow] {graph.get('empty_reason') or '항목 없음'} — 빈 폴백 HTML 생성 (primary_tasks {pn})")
     else:
-        print(f"[build_flow] {n} 작업 / 시간엣지 {len(graph['edges_time'])} / 스킬그룹엣지 {len(graph['edges_skill'])} / 스킬 {len(graph['skills_used'])}종")
+        c = graph["counts"]
+        print(f"[build_flow] {n} 작업 (주요 {c['primary']} / 부수 {c['aux']}) · primary_tasks {pn}개 · 시간엣지 {len(graph['edges_time'])} · 스킬그룹엣지 {len(graph['edges_skill'])}")
+        if pn:
+            for s in graph["primary_stats"]:
+                print(f"             - [p{s['id']}] {s['name']}: {s['count']}건 (마지막 {s['last_date'] or '—'})")
         print(f"[build_flow] type 분포: " + ", ".join(f"{k} {v}" for k, v in sorted(graph["by_type"].items())))
     print(f"[build_flow] -> {html_path}  ({html_path.stat().st_size // 1024} KB, 자체완결 외부 의존 0)")
 
