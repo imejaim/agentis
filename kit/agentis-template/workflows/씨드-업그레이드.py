@@ -60,11 +60,21 @@ def find_seed_file(start: Path) -> Path | None:
 
 
 def find_standard_seed(work_root: Path, from_arg: Path | None) -> Path | None:
-    """표준 씨드 위치 — --from 우선, 그 다음 .kit-mirror/seed/agentis.md."""
+    """표준 씨드 위치.
+
+    우선순위:
+    1) --from <경로>
+    2) 사내 배포 미러(agent_seed)의 .clinerules/agentis.md
+    3) 구버전 개발본/폴백(seed/agentis.md, .kit-mirror/seed/agentis.md)
+    """
     if from_arg:
         p = from_arg.resolve()
         return p if p.is_file() else None
     for cand in (
+        work_root / "agentis" / ".kit-mirror" / "agent_seed" / ".clinerules" / "agentis.md",
+        work_root / ".kit-mirror" / "agent_seed" / ".clinerules" / "agentis.md",
+        work_root / "agentis" / ".kit-mirror" / "agent_seed" / "seed" / "agentis.md",
+        work_root / ".kit-mirror" / "agent_seed" / "seed" / "agentis.md",
         work_root / "agentis" / ".kit-mirror" / "seed" / "agentis.md",
         work_root / ".kit-mirror" / "seed" / "agentis.md",
     ):
@@ -325,8 +335,8 @@ def main(argv=None) -> int:
     if not std_seed:
         print("[씨드-업그레이드] 표준 씨드를 찾지 못했어요.", file=sys.stderr)
         print("  옵션 1) --from <경로> 로 직접 지정", file=sys.stderr)
-        print("  옵션 2) 표준 씨드를 `<작업폴더>/.kit-mirror/seed/agentis.md` 로 다운로드 후 재실행", file=sys.stderr)
-        print("  표준 씨드: https://github.com/imejaim/agentis/blob/main/seed/agentis.md", file=sys.stderr)
+        print("  옵션 2) 사내 배포본을 `<작업폴더>/agentis/.kit-mirror/agent_seed` 로 clone/pull 후 재실행", file=sys.stderr)
+        print("  사내 표준 배포: https://github.sec.samsung.net/dongho-yoon/agent_seed", file=sys.stderr)
         return 2
 
     std_text = std_seed.read_text(encoding="utf-8", errors="replace")

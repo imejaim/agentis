@@ -7,7 +7,7 @@
   ║  설치: 작업 폴더에  .clinerules  파일로 이 내용을 그대로 붙여넣기  ║
   ║       (또는  .clinerules/agentis.md  로 저장)                      ║
   ║  그리고 Cline에게  "안녕"  이라고만 하면 시작됩니다.               ║
-  ║  https://github.com/imejaim/agentis                               ║
+  ║  사내 배포: https://github.sec.samsung.net/dongho-yoon/agent_seed  ║
   ╚══════════════════════════════════════════════════════════════════╝
 -->
 
@@ -30,7 +30,7 @@
 (a) **업무는 코드로** — 채팅 즉흥 산출 대신 Python으로 짜서 재실행·검증.
 (b) **에이전트 부품도 코드(키트)로** — 스킬·워크플로우의 결정론 부품은 **검증된 키트 파일을 1순위로 쓰고**, 키트가 없거나 손상되었을 때만 씨드에서 즉흥 재생성한다 (degraded 모드). 즉흥 생성한 파일은 헤더에 `# agentis-kit: improvised` 를 박아둬서 다음 번 키트가 들어오면 자동으로 덮어쓸 수 있게 한다.
 
-키트의 정본 위치: `kit/agentis-template/` (이 레포 `https://github.com/imejaim/agentis`). 사용자 작업 폴더에는 `agentis/` 로 풀려서 깔린다.
+키트의 정본 위치: 사내 배포 레포 `https://github.sec.samsung.net/dongho-yoon/agent_seed` 의 `kit/agentis-template/` 이다. 사용자 작업 폴더에는 `agentis/` 로 풀려서 깔린다. 외부 `https://github.com/imejaim/agentis` 는 원개발/참고용이고, 사내 사용자는 기본적으로 사내 배포 레포만 쓴다.
 
 ---
 
@@ -77,7 +77,7 @@
 
 **누락 / 손상 시 처리**:
 1. 작업 폴더 옆에 키트 원본이 있나 본다 (예: `kit/agentis-template/` 가 같이 깔린 경우) → 있으면 누락 파일만 복사.
-2. 없으면 사용자에게 한 번만 짧게: *"키트 파일 N개가 빠져있어요. 깃허브 `imejaim/agentis/kit/agentis-template/` 에서 받아오시거나, 제가 씨드에서 임시 생성할까요? (임시 파일은 헤더에 표시되고 키트 들어오면 자동 교체됩니다.)"*
+2. 없으면 사용자에게 한 번만 짧게: *"키트 파일 N개가 빠져있어요. 사내 깃허브 `https://github.sec.samsung.net/dongho-yoon/agent_seed` 의 `kit/agentis-template/` 에서 받아오시거나, 제가 씨드에서 임시 생성할까요? (임시 파일은 헤더에 표시되고 키트 들어오면 자동 교체됩니다.)"*
 3. 사용자 답에 따라:
    - **받아옴** → 사용자가 복사. 자가점검 다시.
    - **임시 생성 승인** → 씨드에 정의된 최소 사양으로 만든다 (degraded 모드). 파일 첫 줄에 반드시 `# agentis-kit: improvised / <name>` 박는다.
@@ -406,9 +406,22 @@ python agentis/workflows/memory-lint.py
 
 `agentis/workflows/씨드-업그레이드.py --check` 로 표준 씨드(또는 사내 미러)와 자기 씨드를 절(§) 단위로 비교할 수 있다. 자세한 절차는 §5-5.
 
+사용자가 명령어를 몰라도 된다. 다음 자연어 요청은 Agentis가 알아서 명령으로 번역한다:
+
+- **"agentis doctor"**, **"Agentis 점검해줘"** → 키트 파일/마커/씨드 버전/사내 미러 접근성을 점검하고, 누락·손상·업데이트 가능성을 보고한다.
+- **"agentis update"**, **"Agentis 업데이트해줘"**, **"씨드 최신으로 맞춰줘"** → 사내 배포 레포를 기준으로 키트와 씨드 업데이트 절차를 안내·실행한다.
+
+사내 표준 배포 레포는 항상 다음 주소로 기억한다:
+
+```text
+https://github.sec.samsung.net/dongho-yoon/agent_seed
+```
+
+이 레포는 전체 개발본이 아니라 **씨드 + 키트만 있는 최소 배포본**이다. npm, 전역 CLI, 외부 자동 미러링은 쓰지 않는다.
+
 ### 5-5. 씨드 자체의 공유와 진화 ⭐ (v1.3 신규)
 
-**핵심**: 사용자가 자기 씨드를 다듬으면 그건 *씨드의 브랜치*다. 표준 씨드(`imejaim/agentis` 또는 사내 미러)에 업데이트가 생기면 **씨드 전체를 덮어쓰지 않고 절(§) 단위로 팩 병합**한다. 그래야 사용자의 개인 진화(좋은 인터뷰 질문 추가, hard gate 강화, 도메인 규약 …)가 보존되면서 표준 개선도 흡수된다.
+**핵심**: 사용자가 자기 씨드를 다듬으면 그건 *씨드의 브랜치*다. 표준 씨드(사내 배포 레포 `https://github.sec.samsung.net/dongho-yoon/agent_seed`)에 업데이트가 생기면 **씨드 전체를 덮어쓰지 않고 절(§) 단위로 팩 병합**한다. 그래야 사용자의 개인 진화(좋은 인터뷰 질문 추가, hard gate 강화, 도메인 규약 …)가 보존되면서 표준 개선도 흡수된다.
 
 **씨드의 절 식별자**: 이 씨드 파일에는 각 절 시작에 `<!-- @section: N -->` 앵커가 박혀 있다. 업그레이드 스크립트가 이걸 키로 3-way diff 를 한다.
 
@@ -420,23 +433,38 @@ python agentis/workflows/memory-lint.py
 
 트리거: 사용자가 "씨드 업그레이드", "씨드 점검", "최신 씨드 받아줘".
 
+동일하게 처리할 자연어/짧은 명령: `agentis update`, `agentis doctor`, "Agentis 업데이트해줘", "Agentis 점검해줘".
+
 흐름:
-1. **확인** (변경 없이 보고만):
+1. **사내 배포본 확보** — 작업 폴더 안에 임시 미러를 만들거나 갱신한다. 사용자가 별도 주소를 주지 않으면 아래 주소를 사용한다.
    ```
-   python agentis/workflows/씨드-업그레이드.py --check
+   git clone https://github.sec.samsung.net/dongho-yoon/agent_seed agentis/.kit-mirror/agent_seed
+   # 이미 있으면: git -C agentis/.kit-mirror/agent_seed pull --ff-only
    ```
-   - 표준 씨드 위치 우선순위: `--from <로컬경로>` > `agentis/.kit-mirror/seed/agentis.md` > 사용자 안내(사내망 다운로드 절차).
+   사내 배포본의 표준 씨드는 보통 `agentis/.kit-mirror/agent_seed/.clinerules/agentis.md` 이다. 구버전/개발본 호환을 위해 `seed/agentis.md` 도 허용한다.
+2. **doctor 점검** — 다음을 확인하고 결과만 짧게 보고한다:
+   - `.clinerules/agentis.md` 존재 여부와 `seed-version`
+   - `agentis/.kit-version`
+   - `agentis/workflows/` 핵심 스크립트 5개
+   - `agentis/graph/` 빌더와 vendor/assets
+   - 사내 미러의 표준 씨드/키트 존재 여부
+3. **확인** (변경 없이 보고만):
+   ```
+   python agentis/workflows/씨드-업그레이드.py --check --from agentis/.kit-mirror/agent_seed/.clinerules/agentis.md
+   ```
+   - 표준 씨드 위치 우선순위: `--from <로컬경로>` > `agentis/.kit-mirror/agent_seed/.clinerules/agentis.md` > `agentis/.kit-mirror/agent_seed/seed/agentis.md` > `agentis/.kit-mirror/seed/agentis.md` > 사용자 안내(사내망 다운로드 절차).
    - 출력 보고서: 절별로 `NEW` / `UPDATED(표준만)` / `LOCAL-ONLY(나만)` / `CONFLICT(양쪽 다)` / `UNCHANGED`.
-2. **사람 결정** — 보고서를 사용자에게 보여주고, 충돌·신규 절에 대해 한 건씩 묻는다 (한 번에 한 질문):
+4. **사람 결정** — 보고서를 사용자에게 보여주고, 충돌·신규 절에 대해 한 건씩 묻는다 (한 번에 한 질문):
    - NEW 절: "§7 <제목>이 표준에 새로 생겼어요. 받을까요?"
    - UPDATED(표준만): "§3-2 가 표준에서 보강됐어요. 받을까요?" (보통 yes)
    - CONFLICT: "§1-2 — 표준도 보강됐고 사용자도 추가하셨네요. ① 머지(둘 다 살리기) ② 내 것 유지 ③ 표준으로 덮기 — 어떻게 할까요?"
-3. **적용**:
+5. **적용**:
    ```
-   python agentis/workflows/씨드-업그레이드.py --apply --decisions <plan.json>
+   python agentis/workflows/씨드-업그레이드.py --apply --plan <plan.json> --from agentis/.kit-mirror/agent_seed/.clinerules/agentis.md
    ```
    결과: 자기 씨드 파일이 갱신되고, 이전 버전은 `agentis/.kit-mirror/seed/backup-YYYY-MM-DD.md` 로 백업. 헤더의 `seed-version` 도 갱신.
-4. `memory/log.md` 에 `## [날짜] seed | upgrade v1.X → v1.Y (적용 N / 보류 M)`.
+6. **키트 업데이트** — 사내 미러의 `kit/agentis-template/` 를 기준으로 누락·improvised 파일을 교체한다. 이미 사용자 작업물이 있는 `agentis/memory/`, `agentis/agent.md` 는 절대 건드리지 않는다.
+7. `memory/log.md` 에 `## [날짜] seed | upgrade v1.X → v1.Y (적용 N / 보류 M)`.
 
 #### 5-5-2. 씨드 브랜치 보내기 (잘 다듬은 사용자 → 메인 큐레이터)
 
@@ -463,7 +491,7 @@ Level >= 5 도달 시 자동 안내: `workflows/사내깃-올리기.py --auto`. 
 
 ### 5-7. 워크플로우 스크립트가 작업 폴더에 없을 때
 
-위 5개 스크립트(`브랜치-내보내기.py`, `팩-병합.py`, `브랜치-비교.py`, `메인-동기화.py`, `씨드-업그레이드.py`)는 키트(`kit/agentis-template/workflows/`)에 있다. 작업 폴더 `agentis/workflows/` 에 없으면 키트 레포에서 받아 복사해 넣고 진행한다. 받기 어려운 환경이면 §0-1 의 degraded 모드 절차로 씨드에서 임시 생성 (헤더에 `# agentis-kit: improvised` 박힘).
+위 5개 스크립트(`브랜치-내보내기.py`, `팩-병합.py`, `브랜치-비교.py`, `메인-동기화.py`, `씨드-업그레이드.py`)는 사내 배포 레포 `https://github.sec.samsung.net/dongho-yoon/agent_seed` 의 키트(`kit/agentis-template/workflows/`)에 있다. 작업 폴더 `agentis/workflows/` 에 없으면 사내 배포 레포에서 받아 복사해 넣고 진행한다. 받기 어려운 환경이면 §0-1 의 degraded 모드 절차로 씨드에서 임시 생성 (헤더에 `# agentis-kit: improvised` 박힘).
 
 ---
 
@@ -486,7 +514,7 @@ Level >= 5 도달 시 자동 안내: `workflows/사내깃-올리기.py --auto`. 
 <!-- @section: 7 -->
 ## 7. (참고) Agentis 키트
 
-이 씨드만으로도 동작한다 (degraded 모드). 그러나 결정론 보장을 위해서는 **키트가 1순위**다 — `kit/agentis-template/` 를 작업 폴더에 `agentis/` 라는 이름으로 복붙하고 "이 폴더 보고 셋업해줘". 브랜치/팩/메인/씨드-업그레이드 워크플로우 스크립트, 그래프 빌더, 능력치 산출기가 거기 있다. — https://github.com/imejaim/agentis
+이 씨드만으로도 동작한다 (degraded 모드). 그러나 결정론 보장을 위해서는 **키트가 1순위**다 — 사내 배포 레포 `https://github.sec.samsung.net/dongho-yoon/agent_seed` 의 `kit/agentis-template/` 를 작업 폴더에 `agentis/` 라는 이름으로 복붙하고 "이 폴더 보고 셋업해줘". 브랜치/팩/메인/씨드-업그레이드 워크플로우 스크립트, 그래프 빌더, 능력치 산출기가 거기 있다.
 
 ---
 
