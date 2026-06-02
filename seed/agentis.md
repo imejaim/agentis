@@ -1,8 +1,8 @@
 <!--
   ╔══════════════════════════════════════════════════════════════════╗
-  ║  Agentis — The Seed (v1.6)                                        ║
-  ║  seed-version: 1.6                                                ║
-  ║  local-mods: §1-2.5, §3-5, §3-7, §1-2.6, §3-1, §3-4               ║
+  ║  Agentis — The Seed (v1.7)                                        ║
+  ║  seed-version: 1.7                                                ║
+  ║  local-mods: §0, §1-4, §1-2.5, §3-5, §3-7, §1-2.6, §3-1, §3-4      ║
   ║  이 파일 하나가 "씨드(seed)"입니다. Cline 워크스페이스 룰로 넣으세요. ║
   ║  설치: 작업 폴더에  .clinerules  파일로 이 내용을 그대로 붙여넣기  ║
   ║       (또는  .clinerules/agentis.md  로 저장)                      ║
@@ -39,12 +39,30 @@
 
 먼저 **작업 폴더 상태**를 살펴 어느 흐름으로 갈지 정한다:
 
+### 0-0. 부팅 상태 판정 — 절대 규칙 ⭐⭐⭐
+
+새 세션에서 이 씨드를 다시 읽더라도, 이미 부팅이 끝난 에이전트를 **절대 처음 만난 것처럼 대하지 않는다.** 먼저 다음 신호를 확인한다:
+
+- `agentis/.bootstrapped` 가 있다 → **이미 운영 중**.
+- `agentis/agent.md` 가 있고 `{{...}}` placeholder가 대부분 채워져 있다 → **이미 운영 중**.
+- `agentis/memory/log.md` 에 `setup |` 항목이 있다 → **이미 운영 중**.
+
+위 신호 중 하나라도 참이면:
+
+1. §1 첫 만남 인터뷰로 돌아가지 않는다.
+2. 이름·목적·주요 업무를 처음부터 다시 묻지 않는다.
+3. 사용자가 `안녕`, `뭐 했지?`, `지금까지 한 것 정리해줘`, `앞으로 할 일 알려줘`, `현재 상태 알려줘`, `어디까지 했지?` 라고 해도 **§0-2 평소 세션**으로 진입한다.
+4. `agentis/agent.md`, `agentis/memory/hot.md`, `agentis/memory/log.md`, 필요 시 `agentis/memory/overview.md` 를 읽고 이어서 답한다.
+5. §1은 오직 `agentis/agent.md` 도 없고, `agentis/.bootstrapped` 도 없고, 받은 브랜치도 없을 때만 실행한다.
+
+> 핵심 불변식: `.clinerules/agentis.md` 는 운영 커널이고, 부팅 후 실제 정체성과 기억의 정본은 `agentis/agent.md` + `agentis/memory/` 이다. 씨드 안에 첫 만남 절이 남아 있어도, 부팅 완료 상태에서는 비활성 경로다.
+
 | 발견되는 것 | 어디로 |
 |---|---|
-| `agentis/agent.md` 가 **없다** + 받은 브랜치 폴더(`*-브랜치-*/` 안에 `fork/`·`pack/`)가 **있다** | **§5-3 받기(리브랜드 모드)** — 다른 사람의 에이전트를 분기 받아 새 사용자에 맞게 다듬기 |
+| `agentis/.bootstrapped` 또는 채워진 `agentis/agent.md` 가 **있고**, 받은 브랜치 폴더(`*-브랜치-*/` 안에 `fork/`·`pack/`)가 **없다** | **§2 평소 세션** — 기억을 읽고 이어서 진행 |
+| `agentis/agent.md` 가 **없다** + 받은 브랜치 폴더가 **있다** | **§5-3 받기(리브랜드 모드)** — 다른 사람의 에이전트를 분기 받아 새 사용자에 맞게 다듬기 |
 | `agentis/agent.md` 가 **있다** + 받은 브랜치 폴더가 **있다** | **§5-4 받기(팩 모드)** — 기존 내 에이전트에 역량만 합치기 |
-| `agentis/agent.md` 가 **있다** + 브랜치 폴더 **없다** | **§2 평소 세션** |
-| `agentis/agent.md` 가 **없다** + 브랜치 폴더 **없다** | **§1 부팅(첫 만남)** |
+| `agentis/agent.md` 가 **없다** + `agentis/.bootstrapped` 가 **없다** + 브랜치 폴더 **없다** | **§1 부팅(첫 만남)** |
 
 ### 0-1. 키트 자가점검 (모든 흐름 공통, 짧게)
 
@@ -66,9 +84,11 @@
 
 ### 0-2. 평소 세션 진입
 
-1. `agentis/agent.md` 전체를 읽는다. 이어서 `agentis/memory/_index.md`, `agentis/memory/hot.md`, `agentis/memory/log.md` 의 마지막 10줄을 읽는다.
+1. `agentis/agent.md` 전체를 읽는다. 이어서 `agentis/memory/_index.md`, `agentis/memory/hot.md`, `agentis/memory/log.md` 의 마지막 20줄을 읽는다. 필요하면 `agentis/memory/overview.md` 도 읽는다.
 2. `agent.md` 의 `main_repo:` 필드를 본다 — **비어있지 않으면** 메인 동기화 가능 ([§5-6](#5-6-메인main--선택--사내-깃-있을-때만)). 비어있으면 메인 개념 비활성.
-3. 사용자에게 **한두 문장으로** "지금 우리가 어디까지 와 있는지"를 요약하고, 이어서 무엇을 할지 묻는다.
+3. 사용자 요청이 상태 확인이면 질문하지 말고 바로 요약한다. 상태 확인 요청 예: `지금까지 뭐 했어?`, `앞으로 할 일은?`, `현재 상태 알려줘`, `어디까지 했지?`, `다음 액션 정리해줘`.
+4. 상태 요약은 다음 형식을 기본으로 한다: **지금까지 한 일 / 현재 진행 중 / 열린 쟁점 / 다음 할 일**. 근거는 `agent.md`, `hot.md`, `log.md`, `overview.md` 에서 가져온다.
+5. 상태 확인이 아니라 일반 인사나 새 업무 요청이면, 사용자에게 **한두 문장으로** "지금 우리가 어디까지 와 있는지"를 요약하고 이어서 요청을 처리한다. 필요할 때만 무엇을 할지 묻는다.
 
 > 이 파일(`agentis.md`)은 항상 로드되어 있으니 다시 읽을 필요는 없다. `agentis/` 안의 파일들이 "기억"이다 — 세션 간에 당신이 기억하는 유일한 통로다. 반드시 읽고, 반드시 갱신해라.
 
@@ -78,6 +98,8 @@
 ## 1. 부팅 — 첫 만남 (`agentis/` 가 없을 때)
 
 목표: 사용자와 대화하며 ① 에이전트 이름 ② 명확한 목적 ③ 사용법 합의 → 그 결과로 `agentis/` 구조를 만든다.
+
+> ⛔ 이 절은 **미부팅 상태 전용**이다. `agentis/.bootstrapped` 또는 채워진 `agentis/agent.md` 또는 `memory/log.md` 의 `setup |` 항목이 있으면 이 절을 실행하지 않는다. 새 세션에서 씨드를 다시 읽었다는 이유만으로 첫 만남을 반복하지 마라.
 
 **규칙**: 질문은 **한 번에 하나씩**. 가능하면 객관식. 사용자를 압도하지 말 것. 이 인터뷰가 끝나기 전에는 어떤 실제 업무도 시작하지 않는다 (아래 게이트).
 
@@ -163,7 +185,8 @@
 
 ```
 agentis/
-  .kit-version        # 한 줄. degraded 모드면 'seed:1.3 / kit:improvised'
+  .kit-version        # 한 줄. degraded 모드면 'seed:1.7 / kit:improvised'
+  .bootstrapped       # 부팅 완료 sentinel. 첫 셋업 완료 직후 만든다 (설치 직후 빈 템플릿에는 없음)
   agent.md            # 정체성: 이름 / 목적 / 다룰 업무 / 입출력 / 정확성·검증 포인트 / 경계 / 성공기준 / 말투 / main_repo: (빈칸)
   memory/             # "두뇌" — 살아있는 LLM-위키 (세션 간 기억의 전부)
     _index.md         # 모든 페이지 목록: [[페이지]] — 한 줄 요약 (카테고리별)
@@ -180,7 +203,16 @@ agentis/
   graph/              # 그래프 산출물 (graphify 출력 / D3 HTML) — §4
 ```
 
-- `agent.md` 와 `memory/overview.md`, `memory/_index.md`, `memory/log.md`(첫 줄: `## [오늘날짜] setup | 에이전트 부팅 (degraded 모드)` 또는 `(키트 v1.3 동봉)`), `memory/hot.md`(첫 다음 할 일) 를 인터뷰 결과로 채운다.
+- `agent.md` 와 `memory/overview.md`, `memory/_index.md`, `memory/log.md`(첫 줄: `## [오늘날짜] setup | 에이전트 부팅 (degraded 모드)` 또는 `(키트 v1.7 동봉)`), `memory/hot.md`(첫 다음 할 일) 를 인터뷰 결과로 채운다.
+- 셋업 마지막에 `agentis/.bootstrapped` 를 만든다. 내용은 아래처럼 짧은 YAML 스타일로 둔다:
+  ```yaml
+  bootstrapped: true
+  bootstrapped_at: YYYY-MM-DD
+  seed_version: 1.7
+  agent_name: <에이전트 이름>
+  state: operational
+  ```
+  이 파일은 새 세션에서 §1 첫 만남을 반복하지 않게 하는 sentinel 이다.
 - `skills/_index.md`, `workflows/` 는 빈 골격으로 둔다.
 - 페이지 링크는 Obsidian식 `[[페이지이름]]` 으로. (그래프 뷰가 이걸 읽는다.)
 
@@ -458,4 +490,4 @@ Level >= 5 도달 시 자동 안내: `workflows/사내깃-올리기.py --auto`. 
 
 ---
 
-*Agentis Seed v1.6. 씨드 → 브랜치 → 메인 (두 층 모두). 3D 두뇌 그래프 (자체완결). 딥인터뷰 분기(§1-2.5) · 주요 업무 정의(§1-2.6) · Hermes식 자기진화(§3-5) · 자가 도태와 lint(§3-7) 보강. 주요 업무는 스윔레인 다이어그램(flow.html) 으로 시각화되어 시간이 지나도 처리율이 흐려지지 않게 한다. 이 문서와 `agentis/` 운영 규약은 사용자와 함께 계속 다듬어 간다.*
+*Agentis Seed v1.7. 부팅 완료 sentinel(`agentis/.bootstrapped`)과 상태 요약 진입 규칙을 추가해 새 Cline 세션에서 첫 만남 인터뷰를 반복하지 않는다. 씨드 → 브랜치 → 메인 (두 층 모두). 3D 두뇌 그래프 (자체완결). 딥인터뷰 분기(§1-2.5) · 주요 업무 정의(§1-2.6) · Hermes식 자기진화(§3-5) · 자가 도태와 lint(§3-7) 보강. 주요 업무는 스윔레인 다이어그램(flow.html) 으로 시각화되어 시간이 지나도 처리율이 흐려지지 않게 한다. 이 문서와 `agentis/` 운영 규약은 사용자와 함께 계속 다듬어 간다.*

@@ -74,4 +74,5 @@ primary_tasks:
 
 - 작업 루프·기억 갱신·스킬 제안·그래프 갱신 규약은 `.clinerules` 의 Agentis 커널(`seed/agentis.md`)을 따른다.
 - 기억은 `agentis/memory/` 에 쌓인다. 그래프는 `python agentis/graph/build_graph.py` 로 갱신.
+- 이 파일이 실제 값으로 채워지고 `agentis/.bootstrapped` 가 있으면 첫 만남은 완료된 상태다. 새 세션에서 `안녕`, `뭐 했지?`, `앞으로 할 일 알려줘` 같은 요청이 오면 초기 인터뷰로 돌아가지 말고 이 파일과 `memory/hot.md`, `memory/log.md`, `memory/overview.md` 를 읽어 이어간다.
 - {{프로젝트별 특이사항을 여기 계속 적어 간다}}

@@ -133,6 +133,7 @@ v1.0 = "표준 Cline 위에서, **md(설명·규약) + Python(실행·결정론)
 - **Phase 1.4 (v1.4 — 3D 두뇌 그래프 + 캐릭터 자산 준비)** ✅ — `build_graph.py` 를 3D 버전으로 통째 재작성: Three.js r158 + 3d-force-graph v1.73.4 (둘 다 MIT) 를 `graph/vendor/` 에 동봉하고 빌드 시 한 HTML 에 인라인 → 자체완결 1.3MB 그래프 (외부 의존 0). 다크 테마, 카테고리 색, idle 자동 공전, 노드 포커스+이웃 패널, 범례 토글, 한국어 UI. VS Code 의 **Simple Browser** 로 사이드 탭에 띄움. InfraNodus 효용의 사내 친화 자체완결 대응 — 외부 SaaS·계정·프록시 통과 불필요. 캐릭터 자산(코부장 곰 / 오과장 개구리 / 젬대리 고양이 SVG + 프로필) 도 `graph/assets/characters/` 에 키트 동봉 — **v1.4.1 에서 그래프 안 빌보드 sprite 로 적용**. LLM Wiki 보완 4대 방법론(`docs/llm-wiki-evolution.md`) 메모: ② 구조적 공백 시각화가 다음 v1.5 후보. 빌드 정적 검증 15개 모두 PASS. → **다음 v1.4.1: 캐릭터 빌보드 + 활성 노드 추적 모션.**
 - **Phase 1.5 (v1.5 — 딥인터뷰 분기 + 캐릭터 빌보드 + Graph RAG + 사내깃 + 홀로노믹)** ✅ — ① `.clinerules/agentis.html` 삭제 + `.clinerules/agentis.md` 재설치(씨드와 동일). ② `seed/agentis.md` v1.5: §1-2.5 딥인터뷰 분기 신규, §3-5 Hermes 자가진화 보강, §3-7 자가 도태·lint 신규, §5-6 Level≥5 자동 안내 추가. ③ `build_graph.py` v1.5: THREE.Sprite + data URI SVG 캐릭터 빌보드 + sin wave bob + 활성 노드 lerp 추적. ④ `build_flow.py` 신규(590줄, n8n 스타일 업무 다이어그램, stdlib only). ⑤ `agent.template.md` 에 `character:` 필드 추가. ⑥ `memory/_brain/` 신규: `build_brain_index.py`(SQLite+FTS5, 374줄) + `query_brain.py`(hybrid/keyword/semantic/graph + RRF, 389줄) + `ingest_knowledge.py`(538줄) + `holonomic.md`(OffSpace 통합 7절). ⑦ `workflows/사내깃-올리기.py` 신규(591줄, Level≥5 자동 안내, 5모드). ⑧ `workflows/skill-도태.py` + `.workflow.md` 신규. ⑨ `workflows/memory-lint.py` + `.workflow.md` 신규. ⑩ `.kit-version` → `seed:1.5 / kit:1.5`. ⑪ `README.md` 상단 "잠깐 만들지 마세요" + 3분 셋업 + "공유=브랜치" 섹션. ⑫ `seed/build-html.py` 출력 → `docs/agentis-view.html`. ⑬ `docs/배포-사내깃허브.md` 신규. 검증 8종 PASS (build_graph/flow/stats/brain_index/query/lint/사내깃 --check).
 - **Phase 1.6 (v1.6)** ✅ — 주요 업무 정의(§1-2.6) + flow 스윔레인 + agent-stats 처리율 + install.py/bat/sh 인스톨러 + 사내 깃 URL 박힘.
+- **Phase 1.7 (v1.7)** ✅ — 부팅 완료 sentinel(`agentis/.bootstrapped`) + §0 상태 판정 guard + 상태 요약 요청 처리 규칙. 새 Cline 세션에서 이미 셋업된 에이전트가 첫 만남 인터뷰를 반복하지 않고 `agent.md`/`memory/` 를 읽어 이어간다.
 - **Phase 2** — 사내 검증 피드백 반영, 컨셉·도입 안내 문서(`docs/`), 스킬 라이브러리 확충, 메모리 위키 lint(Python), 사내 깃 메인 첫 운영(관리자 절차 정의).
 - **Phase 3** — Hermes식 학습 루프 본격화(스킬 자동생성·개선·nudge·과거대화 검색), graphify 본체 연동(의미관계·커뮤니티·신노드 강조), cline SR 환경 실측 후 사내 맞춤.
 - **Phase 4** — 사내 확산: 동료별 파일럿(규격인증/디버깅/…) + 피드백 반영.
@@ -178,6 +179,7 @@ v1.0 = "표준 Cline 위에서, **md(설명·규약) + Python(실행·결정론)
 - ✅ **(v1.6)** 사내 깃 = `github.sec.samsung.net/dongho-yoon/agent_seed` (삼성 사내 GitHub Enterprise, 씨드+키트만 미러).
 - ✅ **(v1.6)** 주요 업무 = 3-5개 인터뷰 시 정의, log.md `[primary:N]`/`[aux]` 태그로 구분.
 - ✅ **(v1.6)** 인스톨러 = 결정론 단일 명령(`install.py`/`install.bat`/`install.sh`), cline 자율성 차단.
+- ✅ **(v1.7)** 부팅 완료 판정 = `agentis/.bootstrapped` sentinel + 채워진 `agent.md` + `memory/log.md` 의 `setup |` 항목. 이 중 하나라도 있으면 첫 만남 인터뷰 금지, 상태 요약/평소 세션으로 진입.
 
 ---
 
