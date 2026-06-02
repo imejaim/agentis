@@ -28,9 +28,22 @@ kit/
     workflows/
       README.md                    ← 워크플로우 포맷
       _template.workflow.md         ← 새 워크플로우 만들 때 복사
+      프로젝트-정리.py              ← 중복/임시/생성물 후보 보고 + _archive 보관 이동
     graph/
       README.md
       build_graph.py                ← memory/ → graph.json + graph.html (표준 라이브러리만, 외부 의존 0)
+```
+
+## 정리/검증 워크플로우
+
+업무 완료 후에는 씨드 §3-8 에 따라 정리·검증·기억·보고 마감 루프를 수행합니다.
+
+```bash
+python agentis/workflows/프로젝트-정리.py          # 정리 후보 보고서만
+python agentis/workflows/프로젝트-정리.py --apply  # 삭제 없이 _archive 로 보관 이동
+python agentis/workflows/memory-lint.py            # 두뇌 링크/중복/고아 페이지 점검
+python agentis/graph/build_flow.py                 # 주요 업무 flow.html 갱신
+python agentis/graph/agent-stats.py                # 능력치 갱신
 ```
 
 ## 그래프 보기
