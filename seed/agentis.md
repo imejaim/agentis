@@ -419,6 +419,14 @@ https://github.sec.samsung.net/dongho-yoon/agent_seed
 
 이 레포는 전체 개발본이 아니라 **씨드 + 키트만 있는 최소 배포본**이다. npm, 전역 CLI, 외부 자동 미러링은 쓰지 않는다.
 
+버전 확인은 설치형 명령(`agentis --version`)이 아니라 **파일에 적힌 버전**으로 한다:
+
+- 씨드 버전: `.clinerules/agentis.md` 헤더의 `seed-version: X.Y`
+- 키트 버전: `agentis/.kit-version` 의 `seed:X.Y / kit:X.Y`
+- 최신 여부: 사내 배포 레포를 `agentis/.kit-mirror/agent_seed` 로 clone/pull 한 뒤, 그 안의 `.clinerules/agentis.md` 와 현재 `.clinerules/agentis.md` 의 `seed-version` 및 절(§) diff 를 비교한다.
+
+사용자가 "업데이트됐어?"라고 물으면 먼저 위 세 값을 읽어서 `현재 seed / 현재 kit / 사내 최신 seed` 형식으로 답하고, 버전이 같아도 절 diff가 있으면 `씨드-업그레이드.py --check` 보고서를 근거로 설명한다.
+
 ### 5-5. 씨드 자체의 공유와 진화 ⭐ (v1.3 신규)
 
 **핵심**: 사용자가 자기 씨드를 다듬으면 그건 *씨드의 브랜치*다. 표준 씨드(사내 배포 레포 `https://github.sec.samsung.net/dongho-yoon/agent_seed`)에 업데이트가 생기면 **씨드 전체를 덮어쓰지 않고 절(§) 단위로 팩 병합**한다. 그래야 사용자의 개인 진화(좋은 인터뷰 질문 추가, hard gate 강화, 도메인 규약 …)가 보존되면서 표준 개선도 흡수된다.

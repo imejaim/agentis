@@ -844,6 +844,13 @@ state: operational</code></pre>
 <p>사내 표준 배포 레포는 항상 다음 주소로 기억한다:</p>
 <pre><code>https://github.sec.samsung.net/dongho-yoon/agent_seed</code></pre>
 <p>이 레포는 전체 개발본이 아니라 <strong>씨드 + 키트만 있는 최소 배포본</strong>이다. npm, 전역 CLI, 외부 자동 미러링은 쓰지 않는다.</p>
+<p>버전 확인은 설치형 명령(<code>agentis --version</code>)이 아니라 <strong>파일에 적힌 버전</strong>으로 한다:</p>
+<ul>
+<li>씨드 버전: <code>.clinerules/agentis.md</code> 헤더의 <code>seed-version: X.Y</code></li>
+<li>키트 버전: <code>agentis/.kit-version</code> 의 <code>seed:X.Y / kit:X.Y</code></li>
+<li>최신 여부: 사내 배포 레포를 <code>agentis/.kit-mirror/agent_seed</code> 로 clone/pull 한 뒤, 그 안의 <code>.clinerules/agentis.md</code> 와 현재 <code>.clinerules/agentis.md</code> 의 <code>seed-version</code> 및 절(§) diff 를 비교한다.</li>
+</ul>
+<p>사용자가 "업데이트됐어?"라고 물으면 먼저 위 세 값을 읽어서 <code>현재 seed / 현재 kit / 사내 최신 seed</code> 형식으로 답하고, 버전이 같아도 절 diff가 있으면 <code>씨드-업그레이드.py --check</code> 보고서를 근거로 설명한다.</p>
 <h3 id="5-5-씨드-자체의-공유와-진화--v13-신규">5-5. 씨드 자체의 공유와 진화 ⭐ (v1.3 신규)</h3>
 <p><strong>핵심</strong>: 사용자가 자기 씨드를 다듬으면 그건 <em>씨드의 브랜치</em>다. 표준 씨드(사내 배포 레포 <code>https://github.sec.samsung.net/dongho-yoon/agent_seed</code>)에 업데이트가 생기면 <strong>씨드 전체를 덮어쓰지 않고 절(§) 단위로 팩 병합</strong>한다. 그래야 사용자의 개인 진화(좋은 인터뷰 질문 추가, hard gate 강화, 도메인 규약 …)가 보존되면서 표준 개선도 흡수된다.</p>
 <p><strong>씨드의 절 식별자</strong>: 이 씨드 파일에는 각 절 시작에 <code>&lt;!-- @section: N --&gt;</code> 앵커가 박혀 있다. 업그레이드 스크립트가 이걸 키로 3-way diff 를 한다.</p>
