@@ -41,6 +41,26 @@ SEED_RELATIVE = Path(".clinerules") / "agentis.md"
 KIT_RELATIVE = Path("kit") / "agentis-template"
 TARGET_KIT_DIRNAME = "agentis"
 
+# 업그레이드 안전장치: 사용자가 키운 지식/상태/시각화 산출물은 표준 키트로 덮지 않는다.
+# 경로는 agentis/ 기준 상대 POSIX 문자열로 비교한다.
+PROTECTED_KIT_PREFIXES = (
+    "memory/",
+    "skills/",
+)
+PROTECTED_KIT_FILES = {
+    "agent.md",
+    ".bootstrapped",
+    "graph/flow.html",
+    "graph/graph.html",
+    "graph/graph.json",
+    "memory/log.md",
+    "memory/hot.md",
+    "memory/overview.md",
+    "memory/_index.md",
+    "memory/stats.md",
+}
+KIT_OWNED_MARKER = "agentis-kit:"
+
 EXIT_OK = 0
 EXIT_BAD_ARGS = 2
 EXIT_BAD_SOURCE = 3
@@ -144,6 +164,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="기존 .clinerules/agentis.md 가 있으면 백업 후 덮어씁니다.",
     )
     p.add_argument(
+        "--upgrade-kit",
+        action="store_true",
+        help="기존 agentis/ 가 있으면 표준 키트를 안전 병합합니다. memory/·graph.html·flow.html 은 보존하고, kit-owned 스크립트만 백업 후 갱신합니다.",
+    )
+    p.add_argument(
         "--quiet",
         action="store_true",
         help="출력 최소화.",
@@ -231,15 +256,92 @@ def install_seed(seed_src: Path, target: Path, dry_run: bool) -> Path:
     return target_seed
 
 
-def install_kit(kit_src: Path, target: Path, dry_run: bool) -> tuple[Path, bool]:
-    """returns (kit_dst, skipped)"""
+def _is_protected_kit_path(rel: Path) -> bool:
+    rel_s = rel.as_posix()
+    return rel_s in PROTECTED_KIT_FILES or any(rel_s.startswith(prefix) for prefix in PROTECTED_KIT_PREFIXES)
+
+
+def _is_kit_owned(path: Path) -> bool:
+    if path.suffix not in {".py", ".md", ".html", ".json"}:
+        return False
+    try:
+        head = path.read_text(encoding="utf-8", errors="replace")[:800]
+    except Exception:
+        return False
+    return KIT_OWNED_MARKER in head
+
+
+def _backup_existing_file(kit_dst: Path, rel: Path, timestamp: str) -> Path:
+    backup = kit_dst / ".upgrade-backups" / timestamp / rel
+    backup.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(kit_dst / rel, backup)
+    return backup
+
+
+def _copy_file(src: Path, dst: Path, dry_run: bool) -> None:
+    if dry_run:
+        return
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(src, dst)
+
+
+def safe_upgrade_kit(kit_src: Path, kit_dst: Path, dry_run: bool = False) -> dict:
+    """표준 키트를 기존 agentis/ 에 안전 병합한다.
+
+    원칙:
+    - 사용자가 키운 지식/상태/생성물(memory/, skills/, agent.md, graph/flow.html,
+      graph/graph.html 등)은 절대 덮지 않는다.
+    - `# agentis-kit:` 마커가 있는 표준 스크립트/문서는 kit-owned 로 보고 백업 후 갱신한다.
+    - 그 외 충돌은 내 파일을 유지하고 incoming 사본을 `.kit-incoming/` 에 둔다.
+    """
+    stats = {"added": 0, "updated": 0, "same": 0, "protected_kept": 0, "incoming_saved": 0}
+    timestamp = _timestamp()
+    if not kit_src.is_dir():
+        return stats
+    if not dry_run:
+        kit_dst.mkdir(parents=True, exist_ok=True)
+
+    for src in sorted(p for p in kit_src.rglob("*") if p.is_file()):
+        rel = src.relative_to(kit_src)
+        dst = kit_dst / rel
+        if not dst.exists():
+            _copy_file(src, dst, dry_run)
+            stats["added"] += 1
+            continue
+
+        if _sha256(src) == _sha256(dst):
+            stats["same"] += 1
+            continue
+
+        if _is_protected_kit_path(rel):
+            stats["protected_kept"] += 1
+            continue
+
+        if _is_kit_owned(dst) or _is_kit_owned(src):
+            if not dry_run:
+                _backup_existing_file(kit_dst, rel, timestamp)
+            _copy_file(src, dst, dry_run)
+            stats["updated"] += 1
+            continue
+
+        incoming = kit_dst / ".kit-incoming" / timestamp / rel
+        _copy_file(src, incoming, dry_run)
+        stats["incoming_saved"] += 1
+
+    return stats
+
+
+def install_kit(kit_src: Path, target: Path, dry_run: bool, upgrade: bool = False) -> tuple[Path, bool, dict | None]:
+    """returns (kit_dst, skipped, upgrade_stats)"""
     kit_dst = target / TARGET_KIT_DIRNAME
     if kit_dst.exists():
-        return kit_dst, True
+        if upgrade:
+            return kit_dst, False, safe_upgrade_kit(kit_src, kit_dst, dry_run=dry_run)
+        return kit_dst, True, None
     if dry_run:
-        return kit_dst, False
+        return kit_dst, False, None
     shutil.copytree(kit_src, kit_dst)
-    return kit_dst, False
+    return kit_dst, False, None
 
 
 # ---------------------------------------------------------------------------
@@ -291,6 +393,7 @@ def print_success(
     kit_dst: Path | None,
     kit_src: Path | None,
     kit_skipped: bool,
+    kit_upgrade_stats: dict | None,
     backup: Path | None,
     dry_run: bool,
 ) -> None:
@@ -324,8 +427,16 @@ def print_success(
         lines += [
             "",
             "ℹ️  agentis/ 폴더가 이미 있어요.",
-            "   키트 업데이트는 `python agentis/workflows/씨드-업그레이드.py --check`",
-            "   또는 키트 폴더 통째 백업 후 다시 install.py 를 쓰세요.",
+            "   기존 지식/그래프를 보호하기 위해 키트는 건너뛰었습니다.",
+            "   새 키트 기능을 안전 병합하려면 `python install.py --target <작업폴더> --upgrade-kit` 을 사용하세요.",
+        ]
+    if kit_upgrade_stats is not None:
+        s = kit_upgrade_stats
+        lines += [
+            "",
+            "🛡️  키트 안전 병합 결과:",
+            f"   추가 {s.get('added', 0)} / kit-owned 갱신 {s.get('updated', 0)} / 동일 {s.get('same', 0)} / 보호보존 {s.get('protected_kept', 0)} / incoming 보관 {s.get('incoming_saved', 0)}",
+            "   보호 대상: agent.md, memory/, skills/, graph/flow.html, graph/graph.html, graph/graph.json 등",
         ]
     lines += [
         "",
@@ -364,8 +475,11 @@ def main(argv: list[str] | None = None) -> int:
     target_seed = install_seed(seed_src, target, dry_run=args.dry_run)
     kit_dst: Path | None = None
     kit_skipped = False
+    kit_upgrade_stats: dict | None = None
     if kit_src is not None:
-        kit_dst, kit_skipped = install_kit(kit_src, target, dry_run=args.dry_run)
+        kit_dst, kit_skipped, kit_upgrade_stats = install_kit(
+            kit_src, target, dry_run=args.dry_run, upgrade=args.upgrade_kit
+        )
 
     if not args.dry_run:
         verify_installation(
@@ -384,6 +498,7 @@ def main(argv: list[str] | None = None) -> int:
         kit_dst=kit_dst,
         kit_src=kit_src,
         kit_skipped=kit_skipped,
+        kit_upgrade_stats=kit_upgrade_stats,
         backup=backup,
         dry_run=args.dry_run,
     )

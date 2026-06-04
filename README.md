@@ -6,8 +6,10 @@ clineSR 창에 여기 깃허브 주소 넣고, '이 주소 보고 셋팅해줘' 
 
 # Agentis
 
-> 사내 **VS Code + cline SR** 환경에서, **워크스페이스 룰 파일 하나**로 부팅되는 **업무처리 에이전트 키트**.
+**Agentis v1.9** — 사내 **VS Code + cline SR** 환경에서, **워크스페이스 룰 파일 하나**로 부팅되는 **업무처리 에이전트 키트**.
+
 > 카오스 → 유니버스. 쓰는 사람도 크고, 에이전트도 큰다.
+> v1.9 핵심: 라대리 기본 이름, 완료 마감 루프, `_archive` 정리, **안전 업그레이드**, 주요 업무별 `flow.html`.
 
 ## 잠깐 — 만들지 마세요
 
@@ -63,7 +65,8 @@ python install.py --target "C:\내작업\프로젝트A"
 자주 쓰는 옵션:
 - `--here` : 현재 디렉토리에 설치 (`--target` 와 상호배타)
 - `--dry-run` : 변경 없이 무엇이 만들어질지 보고만
-- `--force` : 이미 설치되어 있으면 백업 후 덮어쓰기
+- `--force` : 이미 설치되어 있으면 백업 후 룰 파일 덮어쓰기 (`agentis/` 생성물은 기본 보존)
+- `--upgrade-kit` : 기존 `agentis/` 에 새 키트를 **안전 병합**. `memory/`, `skills/`, `agent.md`, `graph/graph.html`, `graph/flow.html`, `graph/graph.json` 은 덮어쓰지 않고, `# agentis-kit:` 마커가 있는 표준 스크립트만 백업 후 갱신
 - `--no-kit` : 룰만 설치, 키트는 건너뜀
 - `--quiet` : 출력 최소화
 
@@ -111,13 +114,15 @@ Agentis는 "에이전트를 만드는 에이전트 환경"입니다. 동료가 �
 - ② **Cline 메모리뱅크 → 살아있는 LLM-위키** — Hermes식 자가확장 + LLM-위키 방식으로 진화시켜 "두뇌"로 (`agentis/memory/`)
 - ③ **3D 두뇌 그래프 (v1.4)** → 지식 쌓이는 게 눈에 보이게. `agentis/graph/build_graph.py` 가 Three.js + 3d-force-graph 인라인 자체완결 `graph.html` 생성 (외부 의존 0 — 사내망/오프라인 OK). VS Code 의 Simple Browser 로 사이드 탭에 띄움. graphify 본체 연동은 추후. (목표 스타일: [`docs/ref-graph-style.png`](./docs/ref-graph-style.png))
 
-## v1.8 운영 보강
+## v1.9 운영 보강
 
 - **기본 이름: 라대리** — 사용자가 바꾸면 그 이름을 정본으로 사용합니다.
 - **Cline 진입점 강화** — Cline이 반드시 읽는 `.clinerules/agentis.md` 안에 정리·검증·기억·보고·Git 관리 규칙을 직접 넣었습니다.
 - **완료 마감 루프** — 업무 완료 시 `정리 → 검증 → 기억 갱신 → graph/flow/stats 갱신 → Git 관리 → 사용자 보고`를 기본 흐름으로 둡니다.
 - **정리 프로세스** — `agentis/workflows/프로젝트-정리.py` 가 중복/임시/생성물 후보를 보고하고, 적용 시에도 삭제가 아니라 `_archive/` 로 보관 이동합니다.
 - **검증 프로세스** — 만든 산출물에 맞는 실제 검증 명령을 돌리고, 실패/미검증은 그대로 보고합니다.
+- **안전 업그레이드** — 1.7/1.8 프로젝트에 1.9 키트를 올릴 때 `memory/`, `agent.md`, `graph.html`, `flow.html` 을 덮지 않습니다. 새 기능은 `--upgrade-kit` 으로 표준 스크립트만 백업 후 병합합니다.
+- **flow.html 재정의** — 업무 히스토리가 아니라 프로젝트의 주요 업무 3~5개와 각 업무의 표준 워크플로우를 스윔레인으로 보여줍니다.
 
 ## 레포 구조
 
@@ -181,9 +186,23 @@ python agentis/workflows/브랜치-비교.py <A 브랜치> <B 브랜치> --out �
 
 자세한 흐름: 씨드(`seed/agentis.md`) §5 — "공유와 진화 — 브랜치 / 팩 / 메인".
 
-### 씨드 자체의 업그레이드 (v1.3 신규)
+### 씨드/키트 자체의 업그레이드 (v1.9)
 
-표준 씨드가 v1.3 → v1.4 로 가도, **자기가 다듬은 씨드는 덮어쓰지 않는다.** 절(§) 단위로 받아온다:
+표준 씨드가 v1.7/1.8 → v1.9 로 가도, **자기가 다듬은 두뇌·워크플로우·씨드는 덮어쓰지 않는다.**
+
+키트 안전 병합:
+
+```bash
+# 기존 프로젝트의 agentis/ 에 새 키트 기능만 안전 병합
+python install.py --target "<작업폴더>" --upgrade-kit
+```
+
+보호 규칙:
+- 보존: `agentis/agent.md`, `agentis/memory/`, `agentis/skills/`, `agentis/graph/graph.html`, `agentis/graph/flow.html`, `agentis/graph/graph.json`
+- 갱신: `# agentis-kit:` 마커가 있는 표준 스크립트/문서 (`build_flow.py`, 워크플로우 도구 등)는 `.upgrade-backups/` 에 백업 후 새 버전 반영
+- 충돌: 소유권이 애매한 파일은 덮지 않고 `.kit-incoming/` 에 incoming 사본 보관
+
+씨드 절 단위 병합:
 
 ```bash
 # 1) 표준과 내 씨드 비교 — 절별 보고서 + plan.json 템플릿 생성

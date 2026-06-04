@@ -1,22 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# agentis-kit: v1.6 / build_flow
+# agentis-kit: v1.9 / build_flow
 """
-build_flow.py — 에이전트의 *업무 흐름*(agentis/memory/log.md 의 작업 연대기)을
-                스윔레인(swimlane) 다이어그램 HTML 로 만든다. (v1.6 부터)
+build_flow.py — 에이전트의 *주요 업무별 표준 워크플로우*를
+                스윔레인(swimlane) 다이어그램 HTML 로 만든다. (v1.9)
 
-새 (v1.6):
-  - agent.md 의 `primary_tasks:` (YAML 리스트) 를 파싱해 N개 주요 업무 레인을 만든다.
-  - log.md 의 `[primary:N]` / `[aux]` 태그로 각 항목을 분류한다.
-  - 상단 대시보드: 주요 업무 카드 N개 (처리 횟수 + 마지막 처리 일자 + 최근 토큰 평균).
-  - 스윔레인: N개 가로 레인(주요) + 1개 흐릿한 부수 레인 (맨 아래).
-  - 컬러 코딩: primary 1~5 = 파/초/보/주/분, aux = 회색 50% 투명.
-  - 빈 상태 폴백: primary_tasks 미정의 시 안내 + 단순 시간순 다이어그램.
+v1.9 규칙:
+  - flow.html 은 업무 히스토리 타임라인이 아니다.
+  - agent.md 의 `primary_tasks:` 3~5개를 파싱해 주요 업무 레인을 만든다.
+  - 각 primary task 의 `workflow:` 단계가 노드가 된다. workflow 가 없으면 기본 3단계가 자동 생성된다.
+  - log.md 의 `[primary:N]` / `[aux]` 기록은 처리 횟수·최근 처리일·최근 토큰 평균 통계에만 쓴다.
+  - 빈 상태 폴백: primary_tasks 미정의 시에만 기존 log.md 시간순 다이어그램으로 후퇴한다.
 
 훑는 대상:
-  agent.md   — `primary_tasks:` 블록 (YAML 들여쓰기 리스트)
+  agent.md   — `primary_tasks:` 블록 (id/name/description/success_metric/workflow)
   log.md     — `## [YYYY-MM-DD] <type> [primary:N | aux] | <제목>` 헤더
-                본문에서 tokens: / sec: / [[skills/...]] / [[..]] 자동 추출
+                본문에서 tokens: / sec: / [[skills/...]] / [[..]] 자동 추출해 통계화
 
 출력:        agentis/graph/flow.html  (자체완결: SVG + 인라인 JS, 외부 의존 0)
 
@@ -102,24 +101,24 @@ def extract_agent_name(root: Path) -> str:
 
 
 def parse_primary_tasks(agent_text: str) -> list[dict]:
-    """agent.md 의 `primary_tasks:` YAML 블록을 들여쓰기로 파싱.
-    pyyaml 의존 없이 결정론적 mini-parser.
+    """agent.md 의 `primary_tasks:` YAML 블록을 들여쓰기 기반으로 파싱.
 
-    인식 패턴:
+    v1.8+ 권장 구조:
         primary_tasks:
           - id: 1
-            name: 짧은 이름
-            description: 한 줄 설명
-            success_metric: 판단 기준
+            name: 고객 문의 처리
+            description: 문의 접수부터 답변까지
+            success_metric: 답변 누락 0
+            workflow:
+              - 문의 접수
+              - 원인 확인
+              - 답변/기록
 
-    yaml 코드펜스 안에 있어도 OK (```yaml ... ``` 도 같이 훑는다).
+    `workflow:` 가 없으면 기본 3단계 워크플로우를 자동 부여한다.
     """
-    # primary_tasks: 부터 시작해서 다음 들여쓰기 0 인 키 또는 코드펜스 닫힘 또는 비-YAML 헤딩 전까지
-    # 간단하게: 우선 'primary_tasks:' 위치 찾고, 그 뒤 줄들 중 들여쓰기 항목만 모은다.
     lines = agent_text.splitlines()
     start = None
     for i, ln in enumerate(lines):
-        # `primary_tasks:` 가 줄 시작 (들여쓰기 허용) 에 나옴
         if re.match(r"^\s*primary_tasks\s*:\s*$", ln):
             start = i + 1
             break
@@ -128,49 +127,64 @@ def parse_primary_tasks(agent_text: str) -> list[dict]:
 
     tasks: list[dict] = []
     cur: dict | None = None
-    end_re_hard = re.compile(r"^(##\s|```|\Z)")   # 마크다운 헤딩 / 코드펜스 종료
+    in_workflow = False
     item_re = re.compile(r"^(\s*)-\s+(.+)$")
     kv_re = re.compile(r"^(\s*)([A-Za-z_][\w-]*)\s*:\s*(.*)$")
 
+    def finish_cur() -> None:
+        nonlocal cur, in_workflow
+        if cur:
+            tasks.append(cur)
+        cur = None
+        in_workflow = False
+
     for j in range(start, len(lines)):
         ln = lines[j]
-        if end_re_hard.match(ln):
+        stripped = ln.strip()
+        if not stripped:
+            continue
+        if stripped.startswith("#"):
+            continue
+        if re.match(r"^```", ln) or re.match(r"^##\s", ln):
             break
-        if ln.strip() == "":
-            continue
-        # 주석 라인 무시
-        if ln.lstrip().startswith("#"):
-            continue
+
         m_item = item_re.match(ln)
         if m_item:
-            # 새 항목 시작
-            if cur:
-                tasks.append(cur)
-            cur = {}
+            indent = len(m_item.group(1).replace("\t", "    "))
             rest = m_item.group(2).strip()
-            # `- id: 1` 처럼 인라인 key:value 인 경우 처리
-            mkv = re.match(r"^([A-Za-z_][\w-]*)\s*:\s*(.+)$", rest)
-            if mkv:
-                cur[mkv.group(1).lower()] = mkv.group(2).strip().strip("\"'")
-            continue
+            # primary_tasks 바로 아래의 새 항목. workflow 하위 항목은 보통 4칸 이상 들여쓰기다.
+            if indent <= 2 and re.match(r"^[A-Za-z_][\w-]*\s*:", rest):
+                finish_cur()
+                cur = {"workflow": []}
+                in_workflow = False
+                mkv = re.match(r"^([A-Za-z_][\w-]*)\s*:\s*(.+)$", rest)
+                if mkv:
+                    cur[mkv.group(1).lower()] = mkv.group(2).strip().strip("\"'")
+                continue
+            if cur is not None and in_workflow:
+                cur.setdefault("workflow", []).append(rest.strip().strip("\"'"))
+                continue
+
         m_kv = kv_re.match(ln)
         if m_kv and cur is not None:
+            indent = len(m_kv.group(1).replace("\t", "    "))
             k = m_kv.group(2).lower()
             v = m_kv.group(3).strip().strip("\"'")
-            # 다른 들여쓰기 0 의 키가 또 나오면 종료 (primary_tasks: 와 같은 레벨)
-            if len(m_kv.group(1)) == 0 and k != "primary_tasks":
+            if indent == 0 and k != "primary_tasks":
                 break
-            cur[k] = v
+            if k == "workflow":
+                cur.setdefault("workflow", [])
+                in_workflow = True
+            else:
+                cur[k] = v
+                in_workflow = False
             continue
-        # 패턴에 안 맞는 줄 — YAML 블록 종료 추정
-        # 단, '...' 같이 처음에 들여쓰기가 있으면 계속 (continuation)
+
         if not ln.startswith(" ") and not ln.startswith("\t"):
             break
 
-    if cur:
-        tasks.append(cur)
+    finish_cur()
 
-    # 정규화: id 가 없으면 순번 부여, name 없는 항목은 건너뜀
     out = []
     for idx, t in enumerate(tasks, start=1):
         if "name" not in t and "id" not in t:
@@ -179,19 +193,21 @@ def parse_primary_tasks(agent_text: str) -> list[dict]:
             tid = int(t.get("id", idx))
         except (TypeError, ValueError):
             tid = idx
-        name = t.get("name", f"primary {tid}").strip()
+        name = str(t.get("name", f"primary {tid}")).strip()
         if not name:
             continue
+        workflow = [str(x).strip() for x in t.get("workflow", []) if str(x).strip()]
+        if not workflow:
+            workflow = ["요청/트리거 확인", "처리/검증", "산출물 보고/기억 갱신"]
         out.append({
             "id": tid,
             "name": name,
-            "description": t.get("description", "").strip(),
-            "success_metric": t.get("success_metric", "").strip(),
+            "description": str(t.get("description", "")).strip(),
+            "success_metric": str(t.get("success_metric", "")).strip(),
+            "workflow": workflow,
         })
-    # id 로 정렬
     out.sort(key=lambda x: x["id"])
     return out
-
 
 def parse_log(log_text: str) -> list[dict]:
     """log.md 의 `## [날짜] type [primary:N|aux] | 제목` 헤더 추출.
@@ -305,6 +321,35 @@ def _last_date(entries: list[dict], primary_id: int) -> str:
     return max(e["date"] for e in its)
 
 
+def build_workflow_entries(primary_tasks: list[dict]) -> list[dict]:
+    """primary_tasks 를 업무 히스토리가 아닌 '주요 업무별 표준 워크플로우' 노드로 변환."""
+    entries: list[dict] = []
+    order = 0
+    for task in primary_tasks:
+        pid = int(task["id"])
+        steps = task.get("workflow") or ["요청/트리거 확인", "처리/검증", "산출물 보고/기억 갱신"]
+        for step_idx, step in enumerate(steps, start=1):
+            entries.append({
+                "id": f"p{pid}s{step_idx}",
+                "date": "workflow",
+                "type": "task",
+                "type_raw": "workflow",
+                "title": f"{task['name']} · {step}",
+                "summary": task.get("description") or task.get("success_metric") or "주요 업무 표준 단계",
+                "skills": [],
+                "tokens": 0,
+                "seconds": 0,
+                "related": [],
+                "body_preview": "",
+                "classification": "primary",
+                "primary_id": pid,
+                "workflow_step": step_idx,
+                "order": order,
+            })
+            order += 1
+    return entries
+
+
 def build(root: Path) -> dict:
     log_path = root / "memory" / "log.md"
     agent_name = extract_agent_name(root)
@@ -316,59 +361,69 @@ def build(root: Path) -> dict:
         agent_text = agent_path.read_text(encoding="utf-8", errors="replace")
         primary_tasks = parse_primary_tasks(agent_text)
 
-    if not log_path.is_file():
-        return {
-            "agent": agent_name, "entries": [], "edges_time": [], "edges_skill": [],
-            "by_type": {}, "skills_used": [], "primary_tasks": primary_tasks,
-            "primary_stats": [], "empty_reason": "log.md 가 아직 없음",
-            "types": {k: {"label": v[0], "color": v[1]} for k, v in TYPE_STYLE.items()},
-            "primary_colors": PRIMARY_COLORS, "aux_color": AUX_COLOR,
-            "counts": {"primary": 0, "aux": 0, "total": 0, "primary_30d": 0, "aux_30d": 0},
-        }
+    if log_path.is_file():
+        text = log_path.read_text(encoding="utf-8", errors="replace")
+        raw = parse_log(text)
+        empty_reason = "log.md 에 항목이 없음" if not raw else None
+    else:
+        raw = []
+        empty_reason = "log.md 가 아직 없음"
 
-    text = log_path.read_text(encoding="utf-8", errors="replace")
-    raw = parse_log(text)
-    if not raw:
-        return {
-            "agent": agent_name, "entries": [], "edges_time": [], "edges_skill": [],
-            "by_type": {}, "skills_used": [], "primary_tasks": primary_tasks,
-            "primary_stats": [], "empty_reason": "log.md 에 항목이 없음",
-            "types": {k: {"label": v[0], "color": v[1]} for k, v in TYPE_STYLE.items()},
-            "primary_colors": PRIMARY_COLORS, "aux_color": AUX_COLOR,
-            "counts": {"primary": 0, "aux": 0, "total": 0, "primary_30d": 0, "aux_30d": 0},
-        }
+    # v1.8+: primary_tasks 가 있으면 flow.html 의 본문 노드는 업무 히스토리가 아니라
+    # '주요 업무별 표준 워크플로우'다. log.md 는 처리 횟수/최근일/토큰 통계로만 사용한다.
+    if primary_tasks:
+        entries = build_workflow_entries(primary_tasks)
+    else:
+        if not raw:
+            return {
+                "agent": agent_name, "entries": [], "edges_time": [], "edges_skill": [],
+                "by_type": {}, "skills_used": [], "primary_tasks": primary_tasks,
+                "primary_stats": [], "empty_reason": empty_reason,
+                "types": {k: {"label": v[0], "color": v[1]} for k, v in TYPE_STYLE.items()},
+                "primary_colors": PRIMARY_COLORS, "aux_color": AUX_COLOR,
+                "counts": {"primary": 0, "aux": 0, "total": 0, "primary_30d": 0, "aux_30d": 0},
+            }
+        entries = assign_order(raw)
 
-    entries = assign_order(raw)
-
-    # 시간순 엣지 (전체 — orientation 은 JS 에서)
+    # 엣지: workflow 모드에서는 같은 primary 안의 단계만 연결한다. primary_tasks 가 없을 때만 시간순 히스토리.
     edges_time = []
-    for i in range(len(entries) - 1):
-        edges_time.append({"source": entries[i]["id"], "target": entries[i + 1]["id"]})
+    if primary_tasks:
+        by_primary: dict[int, list[dict]] = {}
+        for e in entries:
+            by_primary.setdefault(int(e.get("primary_id") or 0), []).append(e)
+        for es in by_primary.values():
+            es_sorted = sorted(es, key=lambda x: x.get("workflow_step", x.get("order", 0)))
+            for i in range(len(es_sorted) - 1):
+                edges_time.append({"source": es_sorted[i]["id"], "target": es_sorted[i + 1]["id"]})
+    else:
+        for i in range(len(entries) - 1):
+            edges_time.append({"source": entries[i]["id"], "target": entries[i + 1]["id"]})
 
-    # 스킬 그룹 엣지 (시간순 인접 동일 스킬)
+    # 스킬 그룹 엣지 (히스토리 모드에서만 의미 있음)
     edges_skill = []
     skill_to_entries: dict[str, list[dict]] = {}
-    for e in entries:
-        for s in e["skills"]:
-            skill_to_entries.setdefault(s, []).append(e)
+    if not primary_tasks:
+        for e in entries:
+            for s in e["skills"]:
+                skill_to_entries.setdefault(s, []).append(e)
+        for s, es in skill_to_entries.items():
+            es_sorted = sorted(es, key=lambda x: x["order"])
+            for i in range(len(es_sorted) - 1):
+                edges_skill.append({"source": es_sorted[i]["id"], "target": es_sorted[i + 1]["id"], "skill": s})
     skills_used = sorted(skill_to_entries.keys())
-    for s, es in skill_to_entries.items():
-        es_sorted = sorted(es, key=lambda x: x["order"])
-        for i in range(len(es_sorted) - 1):
-            edges_skill.append({"source": es_sorted[i]["id"], "target": es_sorted[i + 1]["id"], "skill": s})
 
-    # type 통계
     by_type: dict[str, int] = {}
     for e in entries:
         by_type[e["type"]] = by_type.get(e["type"], 0) + 1
 
-    # 카운트 (총 / 최근 30일)
+    # 카운트/카드 통계는 log.md 실제 처리 기록 기준. 다이어그램 노드는 표준 workflow 기준.
+    stat_entries = raw if primary_tasks else entries
     today = _dt.date.today()
-    primary_n = sum(1 for e in entries if e["classification"] == "primary")
-    aux_n = len(entries) - primary_n
+    primary_n = sum(1 for e in stat_entries if e["classification"] == "primary")
+    aux_n = len(stat_entries) - primary_n
     primary_30d = 0
     aux_30d = 0
-    for e in entries:
+    for e in stat_entries:
         try:
             d = _dt.date.fromisoformat(e["date"])
         except ValueError:
@@ -379,19 +434,18 @@ def build(root: Path) -> dict:
             else:
                 aux_30d += 1
 
-    # 주요 업무별 통계 (대시보드 카드용)
     primary_stats = []
     for pt in primary_tasks:
         pid = pt["id"]
-        count = sum(1 for e in entries if e.get("primary_id") == pid)
+        count = sum(1 for e in raw if e.get("primary_id") == pid)
         primary_stats.append({
             "id": pid,
             "name": pt["name"],
             "description": pt.get("description", ""),
             "success_metric": pt.get("success_metric", ""),
             "count": count,
-            "last_date": _last_date(entries, pid),
-            "avg_tokens": _avg_recent_tokens(entries, pid),
+            "last_date": _last_date(raw, pid),
+            "avg_tokens": _avg_recent_tokens(raw, pid),
             "color": PRIMARY_COLORS.get(pid, AUX_COLOR),
         })
 
@@ -435,7 +489,7 @@ EMPTY_HTML = r"""<!doctype html>
 <p class="em">tip: 주요 업무를 먼저 정의하세요 — <code>agentis/agent.md</code> 의<br>
 <code>primary_tasks:</code> 블록에 3~5개 항목을 채우면<br>
 이 다이어그램이 스윔레인으로 자동 구성됩니다.</p>
-<div class="brand">Agentis v1.6 · build_flow.py · 자체완결 (외부 의존 0)</div>
+<div class="brand">Agentis v1.9 · build_flow.py · 자체완결 (외부 의존 0)</div>
 </body></html>
 """
 
@@ -520,7 +574,7 @@ MAIN_HTML = r"""<!doctype html>
 </div>
 <div id="info"><button class="closeX" id="closeInfo">×</button><div id="infoBody"></div></div>
 <div id="hint">드래그 = 이동 · 휠 = 줌 · 노드 = 상세</div>
-<div id="brand">Agentis v1.6 · build_flow.py · 자체완결 (외부 의존 0)</div>
+<div id="brand">Agentis v1.9 · build_flow.py · 자체완결 (외부 의존 0)</div>
 <svg id="svg" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <marker id="arrow-time" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
