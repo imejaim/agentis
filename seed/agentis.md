@@ -2,7 +2,7 @@
   ╔══════════════════════════════════════════════════════════════════╗
   ║  Agentis — The Seed (v1.9)                                        ║
   ║  seed-version: 1.9                                                ║
-  ║  local-mods: §0, §1-1, §3-1~8, §5-4, §6  ║
+  ║  local-mods: §0, §1-1, §3-1~8, §3-2.5, §5-4, §6  ║
   ║  이 파일 하나가 "씨드(seed)"입니다. Cline 워크스페이스 룰로 넣으세요. ║
   ║  설치: 작업 폴더에  .clinerules  파일로 이 내용을 그대로 붙여넣기  ║
   ║       (또는  .clinerules/agentis.md  로 저장)                      ║
@@ -256,6 +256,97 @@ agentis/
 - **검증 단계를 넣는다.** 출력이 기대대로인지 확인하는 체크(작은 테스트, 샘플 대조, 카운트 확인 등)를 같이 만든다. 사내 도구다 — "아마 맞을 거예요"는 안 된다.
 - LLM(너)의 역할: 코드를 쓰고 / 결과를 검증하고 / 코드로 못 하는 "의미 판단·문장 작성·모호한 해석"만 직접 한다.
 - 필요한 패키지가 없으면 사용자에게 `pip install ...` 해도 되는지 묻고 진행한다. (사내망 제약 가능 — 안 되면 표준 라이브러리로 우회.)
+
+<!-- @section: 3-2.5 -->
+### 3-2.5. 수정가능 HTML 리포트 — PTML Runtime 우선 ⭐⭐
+
+사용자가 “레포트를 수정가능한 HTML로”, “phtml 양식으로”, “PTML로”, “편집 가능한 HTML 보고서로”, “브라우저에서 수정 가능한 리포트로” 같은 요청을 하면, 이는 **PTML Runtime 기반의 단일 `.html` 산출물**을 만들라는 뜻으로 해석한다.
+
+핵심 규칙:
+
+1. **확장자는 항상 `.html`**
+   - 산출물 파일명은 반드시 `*.html` 로 만든다.
+   - `.ptml`, `.phtml` 확장자는 쓰지 않는다.
+   - “phtml 양식”이라는 말은 확장자가 아니라 **PTML/PHTML Runtime이 들어간 editable HTML 파일 형식**을 뜻한다.
+
+2. **손으로 edit mode를 발명하지 않는다**
+   - editable HTML을 직접 즉흥 구현하지 말고, 먼저 PTML CLI/runtime을 사용한다.
+   - PTML이 만든 구조인 `phtml-deck-data`, embedded runtime, `PHTML.init(...)`, 브라우저 편집 모드, `Export HTML` 동작을 보존한다.
+   - 생성 후 내용을 고칠 때도 위 구조를 삭제하거나 깨지 않는다.
+
+3. **명령 우선 workflow**
+   - 먼저 `ptml doctor` 또는 `command -v ptml || command -v phtml` 로 사용 가능 여부를 확인한다.
+   - 가능하면 `ptml report`, `ptml web`, `ptml doc`, `ptml deck` 중 요청 의도에 맞는 명령으로 baseline HTML을 만든 뒤 내용을 편집한다.
+   - `ptml`이 없으면 `phtml` alias를 확인한다.
+   - 둘 다 없으면 `npm install -g @imejaim/ptml` 설치를 안내/실행한다.
+   - 그래도 안 되면 사용자에게 설치가 필요하다고 보고하고, editable runtime 없는 일반 HTML을 PTML 산출물처럼 가장하지 않는다.
+
+4. **디자인 선택**
+   - 일반 업무 보고서/분석 리포트: `ptml report reports/<파일명>.html --title "<제목>"`
+   - 스크롤형 웹 리포트/보기 좋은 임원 보고/랜딩형 문서: `ptml web reports/<파일명>.html --title "<제목>"`
+   - 긴 문서/메모/스펙: `ptml doc reports/<파일명>.html --title "<제목>"`
+   - 발표자료: `ptml deck reports/<파일명>.html --title "<제목>"`
+   - 디자인을 고를 때는 `ptml designs --details` 또는 `ptml designs --json` 을 먼저 본다.
+
+5. **자연어 요청 기본값**
+   - “레포트를 수정가능한 html 인 phtml 양식으로 만들어줘” → `ptml report report.html --title "보고서"`
+   - 더 보기 좋은 스크롤형이면 → `ptml web report.html --title "보고서"`
+   - 자연어를 그대로 넘겨야 하면 → `ptml make "<사용자 요청>" -o report.html`
+
+6. **설치/확인 fallback**
+   ```bash
+   ptml doctor || true
+   command -v ptml || command -v phtml
+   ptml --version || phtml --version
+   ptml agent-guide || phtml agent-guide
+   ptml designs --details || phtml designs --details
+   ```
+
+   `ptml`/`phtml`이 없으면:
+   ```bash
+   npm install -g @imejaim/ptml
+   ```
+
+7. **생성 후 필수 검증**
+   생성된 파일에 PTML editable runtime 구조가 남아 있는지 실제 명령으로 확인한다.
+
+   ```bash
+   ptml validate reports/<파일명>.html
+   ```
+
+   `ptml validate`가 없는 구버전 환경이면 최소한 다음을 확인한다:
+
+   ```bash
+   test -f reports/<파일명>.html
+   python3 - <<'PY'
+from pathlib import Path
+p = Path("reports/<파일명>.html")
+s = p.read_text(encoding="utf-8")
+required = ["PHTML.init", "phtml-deck-data", "phtml-hint", "Export HTML"]
+missing = [x for x in required if x not in s]
+if p.suffix != ".html":
+    raise SystemExit(f"wrong extension: {p.suffix}")
+if missing:
+    raise SystemExit("missing PTML markers: " + ", ".join(missing))
+print("PTML editable HTML OK:", p, p.stat().st_size, "bytes")
+PY
+   ```
+
+8. **브라우저 확인 안내**
+   가능하면 생성 후 사용자에게 다음을 안내한다: 브라우저에서 `.html` 파일 열기 → `E` 키로 edit mode → 박스 드래그/수정 → toolbar의 `Export HTML`로 수정본 저장.
+
+9. **기존 PTML HTML 수정 시**
+   - 기존 HTML 안의 `<script id="phtml-deck-data" type="application/json">...</script>` 데이터를 우선 수정한다.
+   - 필요한 경우 CSS와 박스 내용/layout은 바꿔도 된다.
+   - 단, `PHTML.init`, embedded runtime, edit hint/status, Export HTML 동작은 제거하지 않는다.
+   - 수정 후 `ptml validate <file.html>` 를 다시 실행한다.
+
+10. **완료 보고에 포함할 것**
+   - 생성/수정한 `.html` 경로
+   - 사용한 PTML 명령
+   - 선택한 type/design과 이유
+   - 검증 명령과 실제 결과
+   - 사용자가 브라우저에서 편집/Export HTML 하는 방법
 
 ### 3-3. 산출물 전달
 - 결과 파일 + (만들었으면) 스크립트 + 검증 결과를 함께 보여준다. "어떻게 다시 돌리는지"도 한 줄로.
