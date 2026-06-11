@@ -11,7 +11,7 @@ clineSR 창에 여기 깃허브 주소 넣고, '이 주소 보고 셋팅해줘' 
 > 카오스 → 유니버스. 쓰는 사람도 크고, 에이전트도 큰다.
 > v1.10 핵심: 루트 `workflows.html` / `holonomic-brain.html`, `.clinerules/workflows` 결정론 렌더, 안전 업그레이드 보강.
 
-## v1.9.1 핵심 구조 — Rules는 라우팅, Workflows는 확정 업무
+## v1.10 핵심 구조 — Rules는 라우팅, Workflows는 확정 업무
 
 사내 Cline 적용 결과, 확정 업무 흐름을 `agentis/workflows/` 내부에만 두면 Cline 하단 **Workflows** 탭/하네스가 엄격히 따르지 않을 수 있습니다. 그래서 Agentis의 기준 구조를 아래처럼 정리했습니다.
 
