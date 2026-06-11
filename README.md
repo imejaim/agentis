@@ -11,6 +11,31 @@ clineSR 창에 여기 깃허브 주소 넣고, '이 주소 보고 셋팅해줘' 
 > 카오스 → 유니버스. 쓰는 사람도 크고, 에이전트도 큰다.
 > v1.9 핵심: 라대리 기본 이름, 완료 마감 루프, `_archive` 정리, **안전 업그레이드**, 주요 업무별 `flow.html`.
 
+## v1.9.1 핵심 구조 — Rules는 라우팅, Workflows는 확정 업무
+
+사내 Cline 적용 결과, 확정 업무 흐름을 `agentis/workflows/` 내부에만 두면 Cline 하단 **Workflows** 탭/하네스가 엄격히 따르지 않을 수 있습니다. 그래서 Agentis의 기준 구조를 아래처럼 정리했습니다.
+
+```text
+.clinerules/
+  agentis.md              # 공통 커널: 기억, 검증, 완료 루프
+  10-agent-routing.md     # 자연어 요청 → workflow 라우터
+  workflows/              # Cline Workflows 탭용 확정 업무 규칙
+    00-전체업무순서.md     # 오케스트레이터
+    <업무>.md
+
+agentis/
+  workflows/              # 내부 초안·스크립트·진화 후보
+```
+
+원칙은 간단합니다.
+
+- **Rules**: 항상 알아야 하는 운영 원칙과 라우팅만 둔다.
+- **Workflows**: 확정 업무 순서와 기능별 절차를 둔다.
+- **agentis/workflows**: 에이전트가 만드는 초안/스크립트 작업장이다.
+- 반복/확정 업무는 `agentis/workflows/` 에서 끝내지 말고 `.clinerules/workflows/` 로 동기화한다.
+
+자세한 구조 설명: [`docs/cline-rules-workflows-structure.md`](./docs/cline-rules-workflows-structure.md)
+
 ## 잠깐 — 만들지 마세요
 
 Cline 을 "코딩 에이전트"로만 알고 계셨다면, 업무 자동화 에이전트를 쓰려고 이런 걸 만들려 하실 수 있습니다:
@@ -29,8 +54,10 @@ VS Code + Cline (사내 cline SR) 이 이미 에이전트 호스트입니다.
 
 1. 작업 폴더에 `.clinerules/` 폴더 만들기 (이미 있으면 패스)
 2. 이 레포의 `seed/agentis.md` 내용을 `.clinerules/agentis.md` 로 그대로 복사
-3. 더 갖춰서 시작하려면 `kit/agentis-template/` 폴더를 작업 폴더에 `agentis/` 라는 이름으로 통째로 복사 (선택)
-4. Cline 대화창에 **`안녕`**
+3. 이 레포의 `seed/10-agent-routing.md` 를 `.clinerules/10-agent-routing.md` 로 복사 — 자연어 요청을 workflow로 연결하는 라우터입니다.
+4. 이 레포의 `kit/agentis-template/workflows/*.workflow.md` 를 `.clinerules/workflows/*.md` 로 복사 — Cline 하단 **Workflows** 탭이 읽는 업무별 규칙입니다.
+5. 더 갖춰서 시작하려면 `kit/agentis-template/` 폴더를 작업 폴더에 `agentis/` 라는 이름으로 통째로 복사 (선택)
+6. Cline 대화창에 **`안녕`**
 
 끝. 이제 에이전트가 자기 이름을 짓고, 짧은 인터뷰 후 (원하면 딥인터뷰), 사용법을 안내합니다.
 
@@ -58,8 +85,10 @@ cd agent_seed
 python install.py --target "C:\내작업\프로젝트A"
 ```
 
-설치되는 것은 정확히 두 가지:
+설치되는 것은 정확히 네 가지:
 - `<작업폴더>/.clinerules/agentis.md` (워크스페이스 룰)
+- `<작업폴더>/.clinerules/10-agent-routing.md` (자연어 요청 → workflow 라우팅 룰)
+- `<작업폴더>/.clinerules/workflows/` (Cline Workflows 탭용 업무별 룰)
 - `<작업폴더>/agentis/` (검증된 키트, 선택 — `--no-kit` 로 끌 수 있음)
 
 자주 쓰는 옵션:
@@ -117,7 +146,7 @@ Agentis는 "에이전트를 만드는 에이전트 환경"입니다. 동료가 �
 ## v1.9 운영 보강
 
 - **기본 이름: 라대리** — 사용자가 바꾸면 그 이름을 정본으로 사용합니다.
-- **Cline 진입점 강화** — Cline이 반드시 읽는 `.clinerules/agentis.md` 안에 정리·검증·기억·보고·Git 관리 규칙을 직접 넣었습니다.
+- **Cline 진입점 강화** — Cline이 반드시 읽는 `.clinerules/agentis.md` 안에 정리·검증·기억·보고·Git 관리 규칙을 직접 넣고, `.clinerules/10-agent-routing.md` 는 자연어 요청을 workflow로 라우팅하며, Cline 하단 Workflows 탭이 읽는 `.clinerules/workflows/` 에 업무별 절차서를 함께 배포합니다.
 - **완료 마감 루프** — 업무 완료 시 `정리 → 검증 → 기억 갱신 → graph/flow/stats 갱신 → Git 관리 → 사용자 보고`를 기본 흐름으로 둡니다.
 - **정리 프로세스** — `agentis/workflows/프로젝트-정리.py` 가 중복/임시/생성물 후보를 보고하고, 적용 시에도 삭제가 아니라 `_archive/` 로 보관 이동합니다.
 - **검증 프로세스** — 만든 산출물에 맞는 실제 검증 명령을 돌리고, 실패/미검증은 그대로 보고합니다.
@@ -128,9 +157,11 @@ Agentis는 "에이전트를 만드는 에이전트 환경"입니다. 동료가 �
 
 | 경로 | 내용 |
 |---|---|
-| `seed/agentis.md` | The Seed — `.clinerules` 로 넣는 부트스트랩 커널 (이것 하나로 완결) |
+| `seed/agentis.md` | The Seed — `.clinerules/agentis.md` 로 넣는 부트스트랩 커널 |
+| `seed/10-agent-routing.md` | 자연어 요청을 `.clinerules/workflows/` 의 업무별 workflow로 연결하는 라우팅 룰 |
 | `seed/README.md` | 씨앗 설치 가이드 |
 | `kit/agentis-template/` | 작업 폴더에 `agentis/` 로 복사하는 템플릿 (agent 템플릿 / memory 스캐폴드+운영규약 / skills·workflows 포맷 / `build_graph.py`) |
+| `kit/agentis-template/workflows/00-전체업무순서.workflow.md` | 전체 업무 오케스트레이터 workflow 템플릿 |
 | `kit/README.md` | 키트 사용법 |
 | `examples/spec-doc-checker/` | 예제 에이전트 "규격이" — 채워진 `agentis/` + 동작하는 `run.py` 2종 + 샘플 데이터 |
 | `docs/` | `ref-graph-style.png` (목표 그래프 스타일). 컨셉·도입 문서는 추후 |

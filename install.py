@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-agentis-installer v1.6 — Agentis 결정론 설치기
+agentis-installer v1.9.1 — Agentis 결정론 설치기
 
 사내 동료 설치 안내:
   python install.py --target <내 작업 폴더 절대 경로>
@@ -10,7 +10,9 @@ agentis-installer v1.6 — Agentis 결정론 설치기
 
 이 스크립트는 정확히 다음만 합니다:
   1) <target>/.clinerules/agentis.md 복사
-  2) (--kit, 기본 ON) <target>/agentis/ 에 키트 복사
+  2) <target>/.clinerules/10-agent-routing.md 에 자연어→workflow 라우팅 룰 복사
+  3) <target>/.clinerules/workflows/ 에 Cline 하네스가 직접 읽는 표준 워크플로우 룰 복사
+  4) (--kit, 기본 ON) <target>/agentis/ 에 키트 복사
 
 추가 작업(git push, 네트워크 요청, agentis/ 내부 파일 자동 편집 등) 은 하지 않습니다.
 """
@@ -38,6 +40,9 @@ for _stream in (sys.stdout, sys.stderr):
 # ---------------------------------------------------------------------------
 
 SEED_RELATIVE = Path(".clinerules") / "agentis.md"
+ROUTING_SOURCE_RELATIVE = Path("seed") / "10-agent-routing.md"
+ROUTING_RULE_RELATIVE = Path(".clinerules") / "10-agent-routing.md"
+RULE_WORKFLOWS_RELATIVE = Path(".clinerules") / "workflows"
 KIT_RELATIVE = Path("kit") / "agentis-template"
 TARGET_KIT_DIRNAME = "agentis"
 
@@ -190,9 +195,11 @@ def resolve_target(args: argparse.Namespace) -> Path:
     return Path(raw).expanduser().resolve()
 
 
-def check_source(installer_dir: Path, want_kit: bool) -> tuple[Path, Path | None]:
+def check_source(installer_dir: Path, want_kit: bool) -> tuple[Path, Path | None, Path | None, Path | None]:
     seed_src = installer_dir / SEED_RELATIVE
+    routing_src = installer_dir / ROUTING_SOURCE_RELATIVE
     kit_src = installer_dir / KIT_RELATIVE
+    rule_workflows_src = kit_src / "workflows"
     if not seed_src.is_file():
         _err(
             "❌ 인스톨러가 잘못된 위치에 있는 것 같습니다.\n"
@@ -207,7 +214,7 @@ def check_source(installer_dir: Path, want_kit: bool) -> tuple[Path, Path | None
             "   agent_seed 레포 루트에서 실행해주세요. (또는 --no-kit 로 룰만 설치)"
         )
         sys.exit(EXIT_BAD_SOURCE)
-    return seed_src, (kit_src if want_kit else None)
+    return seed_src, (routing_src if routing_src.is_file() else None), (kit_src if want_kit else None), (rule_workflows_src if rule_workflows_src.is_dir() else None)
 
 
 def check_target(target: Path) -> None:
@@ -254,6 +261,75 @@ def install_seed(seed_src: Path, target: Path, dry_run: bool) -> Path:
     target_seed.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(seed_src, target_seed)
     return target_seed
+
+
+def install_routing_rule(routing_src: Path | None, target: Path, dry_run: bool, force: bool = False) -> tuple[Path, str]:
+    """Cline Rules용 자연어→workflow 라우터를 설치한다."""
+    target_rule = target / ROUTING_RULE_RELATIVE
+    if routing_src is None:
+        return target_rule, "missing_source"
+    existed = target_rule.exists()
+    if existed:
+        if _sha256(routing_src) == _sha256(target_rule):
+            return target_rule, "same"
+        if not force:
+            return target_rule, "kept"
+        if not dry_run:
+            backup = target_rule.with_name(f"{target_rule.name}.backup-{_timestamp()}")
+            target_rule.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(target_rule, backup)
+    if not dry_run:
+        target_rule.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(routing_src, target_rule)
+    return target_rule, "updated" if existed else "added"
+
+
+def _rule_workflow_target_name(src: Path) -> str:
+    """Cline workflows 탭에 보일 룰 파일명."""
+    name = src.name
+    if name.endswith(".workflow.md"):
+        return name.replace(".workflow.md", ".md")
+    return name
+
+
+def install_rule_workflows(
+    workflows_src: Path | None,
+    target: Path,
+    dry_run: bool,
+    force: bool = False,
+) -> tuple[Path, dict]:
+    """표준 절차서를 Cline-visible `.clinerules/workflows/` 로 복사한다.
+
+    `agentis/workflows/` 는 실행 스크립트와 에이전트 내부 지식의 정본이고,
+    `.clinerules/workflows/` 는 Cline 하네스가 직접 읽을 가능성이 높은 실행 규칙의 정본이다.
+    사용자가 이미 수정한 워크플로우 룰은 기본 보존하고, `--force` 일 때만 백업 후 갱신한다.
+    """
+    target_dir = target / RULE_WORKFLOWS_RELATIVE
+    stats = {"added": 0, "updated": 0, "kept": 0, "backed_up": 0, "missing_source": 0}
+    if workflows_src is None or not workflows_src.is_dir():
+        stats["missing_source"] = 1
+        return target_dir, stats
+
+    for src in sorted(workflows_src.glob("*.workflow.md")):
+        dst = target_dir / _rule_workflow_target_name(src)
+        if dst.exists():
+            if _sha256(src) == _sha256(dst):
+                stats["kept"] += 1
+                continue
+            if not force:
+                stats["kept"] += 1
+                continue
+            if not dry_run:
+                backup = target_dir / f"{dst.name}.backup-{_timestamp()}"
+                backup.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(dst, backup)
+            stats["backed_up"] += 1
+            _copy_file(src, dst, dry_run)
+            stats["updated"] += 1
+            continue
+        _copy_file(src, dst, dry_run)
+        stats["added"] += 1
+    return target_dir, stats
 
 
 def _is_protected_kit_path(rel: Path) -> bool:
@@ -394,12 +470,16 @@ def print_success(
     kit_src: Path | None,
     kit_skipped: bool,
     kit_upgrade_stats: dict | None,
+    routing_rule_status: str | None,
+    rule_workflow_stats: dict | None,
     backup: Path | None,
     dry_run: bool,
 ) -> None:
     title = "🔎 Dry-run 결과 (실제로는 아무것도 만들어지지 않았습니다)" if dry_run else "✅ Agentis 설치 완료"
     seed_size = seed_src.stat().st_size
     seed_line = f"   ├── .clinerules/agentis.md ({_human_size(seed_size)})"
+    routing_line = "   ├── .clinerules/10-agent-routing.md (natural language → workflow router)"
+    workflow_line = "   ├── .clinerules/workflows/ (Cline-visible workflow rules)"
     kit_line = ""
     if kit_src is not None:
         kit_file_count = _count_files(kit_src)
@@ -410,7 +490,7 @@ def print_success(
         else:
             kit_line = f"   └── agentis/ ({kit_file_count} 파일)"
     else:
-        seed_line = f"   └── .clinerules/agentis.md ({_human_size(seed_size)})"
+        seed_line = f"   ├── .clinerules/agentis.md ({_human_size(seed_size)})"
 
     lines = [
         "",
@@ -418,6 +498,8 @@ def print_success(
         "",
         f"📂 설치 위치: {target}",
         seed_line,
+        routing_line,
+        workflow_line,
     ]
     if kit_line:
         lines.append(kit_line)
@@ -437,6 +519,14 @@ def print_success(
             "🛡️  키트 안전 병합 결과:",
             f"   추가 {s.get('added', 0)} / kit-owned 갱신 {s.get('updated', 0)} / 동일 {s.get('same', 0)} / 보호보존 {s.get('protected_kept', 0)} / incoming 보관 {s.get('incoming_saved', 0)}",
             "   보호 대상: agent.md, memory/, skills/, graph/flow.html, graph/graph.html, graph/graph.json 등",
+        ]
+    if rule_workflow_stats is not None:
+        s = rule_workflow_stats
+        lines += [
+            "",
+            "⚖️  Cline workflows 룰 반영:",
+            f"   라우터 {routing_rule_status or 'unknown'} / workflow 추가 {s.get('added', 0)} / 갱신 {s.get('updated', 0)} / 보존 {s.get('kept', 0)} / 백업 {s.get('backed_up', 0)}",
+            "   경로: .clinerules/10-agent-routing.md + .clinerules/workflows/",
         ]
     lines += [
         "",
@@ -461,7 +551,7 @@ def main(argv: list[str] | None = None) -> int:
 
     installer_dir = Path(__file__).resolve().parent
     target = resolve_target(args)
-    seed_src, kit_src = check_source(installer_dir, want_kit=args.kit)
+    seed_src, routing_src, kit_src, rule_workflows_src = check_source(installer_dir, want_kit=args.kit)
     check_target(target)
     backup = check_existing_seed(target, force=args.force, dry_run=args.dry_run)
 
@@ -473,6 +563,18 @@ def main(argv: list[str] | None = None) -> int:
         _print("⚙️  --dry-run: 실제 파일은 만들어지지 않습니다.", args=args)
 
     target_seed = install_seed(seed_src, target, dry_run=args.dry_run)
+    _routing_rule_dst, routing_rule_status = install_routing_rule(
+        routing_src,
+        target,
+        dry_run=args.dry_run,
+        force=args.force,
+    )
+    _rule_workflows_dst, rule_workflow_stats = install_rule_workflows(
+        rule_workflows_src,
+        target,
+        dry_run=args.dry_run,
+        force=args.force,
+    )
     kit_dst: Path | None = None
     kit_skipped = False
     kit_upgrade_stats: dict | None = None
@@ -499,6 +601,8 @@ def main(argv: list[str] | None = None) -> int:
         kit_src=kit_src,
         kit_skipped=kit_skipped,
         kit_upgrade_stats=kit_upgrade_stats,
+        routing_rule_status=routing_rule_status,
+        rule_workflow_stats=rule_workflow_stats,
         backup=backup,
         dry_run=args.dry_run,
     )

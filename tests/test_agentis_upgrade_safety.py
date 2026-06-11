@@ -20,6 +20,51 @@ build_flow = load_module("agentis_build_flow", ROOT / "kit" / "agentis-template"
 
 
 class AgentisUpgradeSafetyTests(unittest.TestCase):
+    def test_install_routing_rule_copies_natural_language_router(self):
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            src = base / "seed" / "10-agent-routing.md"
+            target = base / "project"
+            src.parent.mkdir(parents=True)
+            target.mkdir()
+            src.write_text("# router\n", encoding="utf-8")
+
+            dst, status = install.install_routing_rule(src, target, dry_run=False)
+
+            self.assertEqual(dst, target / ".clinerules" / "10-agent-routing.md")
+            self.assertEqual(status, "added")
+            self.assertEqual(dst.read_text(encoding="utf-8"), "# router\n")
+
+    def test_install_rule_workflows_copies_kit_workflows_to_clinerules(self):
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            workflows_src = base / "kit" / "agentis-template" / "workflows"
+            target = base / "project"
+            workflows_src.mkdir(parents=True)
+            target.mkdir()
+            (workflows_src / "월간보고.workflow.md").write_text("# 월간보고\n", encoding="utf-8")
+
+            dst, stats = install.install_rule_workflows(workflows_src, target, dry_run=False)
+
+            self.assertEqual(dst, target / ".clinerules" / "workflows")
+            self.assertTrue((target / ".clinerules" / "workflows" / "월간보고.md").is_file())
+            self.assertEqual(stats["added"], 1)
+
+    def test_install_rule_workflows_preserves_user_modified_rules_without_force(self):
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            workflows_src = base / "kit" / "agentis-template" / "workflows"
+            target_rule = base / "project" / ".clinerules" / "workflows" / "월간보고.md"
+            workflows_src.mkdir(parents=True)
+            target_rule.parent.mkdir(parents=True)
+            (workflows_src / "월간보고.workflow.md").write_text("# standard\n", encoding="utf-8")
+            target_rule.write_text("# user custom\n", encoding="utf-8")
+
+            _dst, stats = install.install_rule_workflows(workflows_src, base / "project", dry_run=False, force=False)
+
+            self.assertEqual(target_rule.read_text(encoding="utf-8"), "# user custom\n")
+            self.assertEqual(stats["kept"], 1)
+
     def test_safe_kit_upgrade_preserves_generated_graph_and_memory(self):
         with tempfile.TemporaryDirectory() as td:
             base = Path(td)

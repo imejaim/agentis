@@ -1,11 +1,10 @@
 <!--
   ╔══════════════════════════════════════════════════════════════════╗
-  ║  Agentis — The Seed (v1.9)                                        ║
-  ║  seed-version: 1.9                                                ║
+  ║  Agentis — The Seed (v1.9.1)                                      ║
+  ║  seed-version: 1.9.1                                              ║
   ║  local-mods: §0, §1-1, §3-1~8, §3-2.5, §5-4, §6  ║
   ║  이 파일 하나가 "씨드(seed)"입니다. Cline 워크스페이스 룰로 넣으세요. ║
-  ║  설치: 작업 폴더에  .clinerules  파일로 이 내용을 그대로 붙여넣기  ║
-  ║       (또는  .clinerules/agentis.md  로 저장)                      ║
+  ║  설치: .clinerules/agentis.md + 10-agent-routing.md + workflows/  ║
   ║  그리고 Cline에게  "안녕"  이라고만 하면 시작됩니다.               ║
   ║  사내 배포: https://github.sec.samsung.net/dongho-yoon/agent_seed  ║
   ╚══════════════════════════════════════════════════════════════════╝
@@ -242,8 +241,9 @@ agentis/
 
 ### 3-1. 이해 & 계획
 - 요청을 정확히 이해했는지 한 줄로 되짚는다. 애매하면 한 가지만 묻는다.
-- **진입점 불변식**: Cline 이 반드시 읽는 것은 작업 폴더의 `.clinerules/agentis.md` 뿐이라고 가정한다. 그러므로 놓치면 안 되는 운영 규칙(삭제 금지, 완료 루프, 검증, 기억 갱신, 보고, Git 관리)은 반드시 이 씨드 파일 안에 유지한다. 별도 문서·README·flow.html 은 보조 설명일 뿐, 필수 규칙의 정본이 아니다.
+- **진입점 불변식**: Cline 이 반드시 읽는 최상위 커널은 작업 폴더의 `.clinerules/agentis.md` 이다. 자연어 요청을 업무별 workflow로 보내는 라우터는 `.clinerules/10-agent-routing.md` 에 둔다. Cline 하단 **Workflows** 탭이 읽는 업무별 규칙은 `.clinerules/workflows/` 아래에 둔다. 그러므로 놓치면 안 되는 공통 운영 규칙(삭제 금지, 완료 루프, 검증, 기억 갱신, 보고, Git 관리)은 이 씨드 파일 안에 유지하고, 자연어→workflow 매핑은 라우터에, 확정된 업무 단위 절차는 `.clinerules/workflows/<업무>.md` 에 동기화한다. `agentis/workflows/` 는 실행 스크립트·내부 지식·진화 후보의 작업장이고, `.clinerules/workflows/` 는 Cline 하네스가 직접 따라야 하는 업무별 룰의 배포 위치다.
 - **주요 업무 분류 (v1.6)**: 요청을 한 줄로 되짚을 때 *주요 업무 N개 중 하나인지* 먼저 분류한다. `agent.md` 의 `primary_tasks:` 와 매칭. 부수 업무면 사용자에게 "이건 부수 업무로 처리할게요" 한 마디 알리고 진행. 어디에도 안 들어가면 §1-2.6 의 분기 질문(추가 / 부수 / 거절) 으로.
+- **업무별 workflow 우선순위**: 요청이 주요 업무 또는 반복 확정 업무에 속하면 먼저 `.clinerules/workflows/` 에 같은 업무 규칙이 있는지 확인하고, 있으면 그 절차를 최우선으로 따른다. 없고 `agentis/workflows/<업무>.workflow.md` 만 있으면, 업무 종료 전 `.clinerules/workflows/<업무>.md` 로 승격/동기화한다.
 - `agentis/memory/_index.md` 와 관련 페이지를 먼저 본다 — 이미 아는 게 있을 수 있다.
 - `agentis/skills/_index.md` 에 이 일에 맞는 스킬이 있으면 그걸 쓴다.
 - 작업이 파일/폴더를 건드리면 시작 전에 `git status` 또는 변경 전 파일 목록을 확인해 기준점을 잡는다. Git 저장소가 없고 장기 운영 프로젝트라면 사용자에게 "Git으로 변경 이력을 남기면 안전합니다. 초기화할까요?"라고 제안한다.
