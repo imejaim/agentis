@@ -6,10 +6,10 @@ clineSR 창에 여기 깃허브 주소 넣고, '이 주소 보고 셋팅해줘' 
 
 # Agentis
 
-**Agentis v1.9** — 사내 **VS Code + cline SR** 환경에서, **워크스페이스 룰 파일 하나**로 부팅되는 **업무처리 에이전트 키트**.
+**Agentis v1.10** — 사내 **VS Code + cline SR** 환경에서, **워크스페이스 룰 파일 하나**로 부팅되는 **업무처리 에이전트 키트**.
 
 > 카오스 → 유니버스. 쓰는 사람도 크고, 에이전트도 큰다.
-> v1.9 핵심: 라대리 기본 이름, 완료 마감 루프, `_archive` 정리, **안전 업그레이드**, 주요 업무별 `flow.html`.
+> v1.10 핵심: 루트 `workflows.html` / `holonomic-brain.html`, `.clinerules/workflows` 결정론 렌더, 안전 업그레이드 보강.
 
 ## v1.9.1 핵심 구조 — Rules는 라우팅, Workflows는 확정 업무
 
@@ -35,6 +35,26 @@ agentis/
 - 반복/확정 업무는 `agentis/workflows/` 에서 끝내지 말고 `.clinerules/workflows/` 로 동기화한다.
 
 자세한 구조 설명: [`docs/cline-rules-workflows-structure.md`](./docs/cline-rules-workflows-structure.md)
+
+## v1.10 루트 사람용 보기 — workflows.html / holonomic-brain.html
+
+사람에게 보여주는 안내판은 `agentis/` 내부가 아니라 **작업 폴더 루트**에 생성합니다.
+
+```text
+<작업폴더>/workflows.html          # .clinerules/workflows/*.md 결정론 업무 지도
+<작업폴더>/holonomic-brain.html    # agentis/memory/ 기반 사람용 두뇌 지도
+<작업폴더>/holonomic-brain.json    # 두뇌 지도 데이터
+agentis/graph/graph.html           # 기존 3D 호환 뷰 유지
+agentis/graph/flow.html            # 기존 primary_tasks 스윔레인 유지
+```
+
+자동 갱신 명령:
+
+```bash
+python agentis/graph/refresh_views.py --workspace .
+```
+
+`workflows.html`의 정본 입력은 `.clinerules/workflows/` 입니다. 확정 업무가 추가되거나 바뀌면 markdown을 고친 뒤 위 refresh 명령으로 HTML을 다시 만듭니다. 생성 HTML은 편집 정본이 아니므로, 기존 사용자의 기억·스킬·씨드를 지우지 않습니다.
 
 ## 잠깐 — 만들지 마세요
 
@@ -95,7 +115,7 @@ python install.py --target "C:\내작업\프로젝트A"
 - `--here` : 현재 디렉토리에 설치 (`--target` 와 상호배타)
 - `--dry-run` : 변경 없이 무엇이 만들어질지 보고만
 - `--force` : 이미 설치되어 있으면 백업 후 룰 파일 덮어쓰기 (`agentis/` 생성물은 기본 보존)
-- `--upgrade-kit` : 기존 `agentis/` 에 새 키트를 **안전 병합**. `memory/`, `skills/`, `agent.md`, `graph/graph.html`, `graph/flow.html`, `graph/graph.json` 은 덮어쓰지 않고, `# agentis-kit:` 마커가 있는 표준 스크립트만 백업 후 갱신
+- `--upgrade-kit` : 기존 `agentis/` 에 새 키트를 **안전 병합**. 기존 `.clinerules/agentis.md` 와 `.clinerules/workflows/` 사용자 수정본은 보존하고, `memory/`, `skills/`, `agent.md`, `graph/graph.html`, `graph/flow.html`, `graph/graph.json`, `workflows.html`, `holonomic-brain.html` 은 덮어쓰지 않습니다. `# agentis-kit:` 마커가 있는 표준 스크립트만 백업 후 갱신합니다.
 - `--no-kit` : 룰만 설치, 키트는 건너뜀
 - `--quiet` : 출력 최소화
 
@@ -229,8 +249,8 @@ python install.py --target "<작업폴더>" --upgrade-kit
 ```
 
 보호 규칙:
-- 보존: `agentis/agent.md`, `agentis/memory/`, `agentis/skills/`, `agentis/graph/graph.html`, `agentis/graph/flow.html`, `agentis/graph/graph.json`
-- 갱신: `# agentis-kit:` 마커가 있는 표준 스크립트/문서 (`build_flow.py`, 워크플로우 도구 등)는 `.upgrade-backups/` 에 백업 후 새 버전 반영
+- 보존: `.clinerules/agentis.md`, `.clinerules/workflows/` 기존 사용자 수정본, `agentis/agent.md`, `agentis/memory/`, `agentis/skills/`, `agentis/graph/graph.html`, `agentis/graph/flow.html`, `agentis/graph/graph.json`, 루트 `workflows.html`, 루트 `holonomic-brain.html`
+- 갱신: `# agentis-kit:` 마커가 있는 표준 스크립트/문서 (`build_flow.py`, `build_workflows.py`, `build_holonomic_brain.py`, `refresh_views.py`, 워크플로우 도구 등)는 `.upgrade-backups/` 에 백업 후 새 버전 반영
 - 충돌: 소유권이 애매한 파일은 덮지 않고 `.kit-incoming/` 에 incoming 사본 보관
 
 씨드 절 단위 병합:

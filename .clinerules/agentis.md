@@ -1,8 +1,8 @@
 <!--
   ╔══════════════════════════════════════════════════════════════════╗
-  ║  Agentis — The Seed (v1.9.1)                                      ║
-  ║  seed-version: 1.9.1                                              ║
-  ║  local-mods: §0, §1-1, §3-1~8, §3-2.5, §5-4, §6  ║
+  ║  Agentis — The Seed (v1.10)                                       ║
+  ║  seed-version: 1.10                                               ║
+  ║  local-mods: §0, §1-1, §3-1~8, §3-2.5, §4, §5-4, §6  ║
   ║  이 파일 하나가 "씨드(seed)"입니다. Cline 워크스페이스 룰로 넣으세요. ║
   ║  설치: .clinerules/agentis.md + 10-agent-routing.md + workflows/  ║
   ║  그리고 Cline에게  "안녕"  이라고만 하면 시작됩니다.               ║
@@ -71,7 +71,7 @@
 
 - 키트 파일이 자리에 있는가:
   - `agentis/workflows/` 안에 `브랜치-내보내기.py`, `팩-병합.py`, `브랜치-비교.py`, `메인-동기화.py`, `씨드-업그레이드.py`, `memory-lint.py`, `skill-도태.py`, `프로젝트-정리.py`
-  - `agentis/graph/` 안에 `build_graph.py`, `build_flow.py`, `agent-stats.py`
+  - `agentis/graph/` 안에 `build_graph.py`, `build_flow.py`, `build_workflows.py`, `build_holonomic_brain.py`, `refresh_views.py`, `agent-stats.py`
   - `agentis/graph/vendor/` 안에 `three.min.js`, `3d-force-graph.min.js` (v1.4부터 — 3D 그래프 빌더가 인라인하는 라이브러리)
   - `agentis/graph/assets/characters/` (v1.4부터 동봉, v1.4.1 적용 예정) — 코부장/오과장/젬대리 SVG
 - 키트 마커 파일 `agentis/.kit-version` (한 줄: 예 `seed:1.4 / kit:1.4`)
@@ -351,7 +351,7 @@ PY
 ### 3-3. 산출물 전달
 - 결과 파일 + (만들었으면) 스크립트 + 검증 결과를 함께 보여준다. "어떻게 다시 돌리는지"도 한 줄로.
 - 보고는 결론 먼저: **완료/미완료**, 바뀐 파일, 검증 명령과 실제 결과, 사용자가 확인·삭제·승인해야 할 일을 짧게 구분한다.
-- `flow.html`, `graph.html`, `stats.md`, 정리 보고서처럼 사용자가 보면 좋은 산출물이 갱신됐으면 "갱신했다"고 명시하고 경로를 알려준다.
+- `flow.html`, `graph.html`, `stats.md`, 루트 `workflows.html`, 루트 `holonomic-brain.html`, 정리 보고서처럼 사용자가 보면 좋은 산출물이 갱신됐으면 "갱신했다"고 명시하고 경로를 알려준다.
 
 ### 3-4. 기억 갱신 (작업 끝나면 항상) ⭐
 업무가 끝났다면 산출물만 내고 멈추지 않는다. 이번 작업에서 새로 알게 된 것을 `agentis/memory/` 에 반영한다:
@@ -380,11 +380,16 @@ PY
 - **메모리 nudge (작업 시작 시 자동 끌어오기)**: 작업 루프 §3-1 의 "이해 & 계획" 단계에서 `memory/hot.md` 를 무조건 읽고, 요청 텍스트에서 토큰을 추출해 `memory/concepts/` 와 `memory/entities/` 에서 매칭되는 페이지를 1~3개 자동으로 끌어와 컨텍스트에 올린다 (사용자에게 떠들지 말고 조용히). 이게 "전에 했던 기억이 자동으로 떠오르는" 느낌의 핵심.
 - **헬퍼 워크플로우**: `python agentis/workflows/skill-promote.py --pattern <fingerprint>` 로 패턴 카운트가 임계치를 넘었는지 확인하고 자동 승격. 키트에 없으면 §0-1 의 degraded 모드 절차를 따른다.
 
-### 3-6. 그래프 + flow + 능력치 갱신
-- 기억이 바뀌었으면 `agentis/graph/build_graph.py` 로 그래프를 갱신한다 (§4). 사용자가 "두뇌가 자랐다"를 눈으로 보게.
-- `memory/log.md` 나 `primary_tasks` 가 바뀌었으면 `agentis/graph/build_flow.py` 로 `agentis/graph/flow.html` 도 갱신한다. 작업 흐름·주요 업무 처리율이 흐려지지 않게 하는 운영 대시보드다.
+### 3-6. 그래프 + workflow 보기 + 능력치 갱신
+- 기억, `memory/log.md`, `primary_tasks`, `.clinerules/workflows/` 중 하나라도 바뀌었으면 우선 한 번에 갱신한다:
+  ```
+  python agentis/graph/refresh_views.py --workspace .
+  ```
+  이 명령은 기존 호환 산출물 `agentis/graph/graph.html`, `agentis/graph/flow.html` 과 사람용 루트 산출물 `workflows.html`, `holonomic-brain.html` 을 함께 만든다.
+- `workflows.html` 의 정본 입력은 `.clinerules/workflows/*.md` 이다. 확정 업무가 추가/수정되면 반드시 이 루트 HTML도 갱신되어야 한다.
+- `holonomic-brain.html` 은 `agentis/memory/`, `agentis/skills/`, `agentis/workflows/` 의 관계와 건강 상태를 보여주는 사람용 두뇌 지도다. 대화·업무로 지식이 쌓였으면 항상 갱신한다.
 - **능력치 시트도 갱신**한다: `python agentis/graph/agent-stats.py` → 콘솔에 캐릭터 시트(Level/XP/Speed/INT/Variety/Stamina/Wisdom + 도메인 유전자) + `agentis/memory/stats.md` 갱신.
-- 위 두 스크립트가 **없으면**: 키트에서 받아오게 안내(§0-1)하거나, 사용자 승인 하에 씨드의 사양대로 임시 생성(degraded). 임시 생성한 파일은 `# agentis-kit: improvised` 헤더를 박는다.
+- 위 스크립트가 **없으면**: 키트에서 받아오게 안내(§0-1)하거나, 사용자 승인 하에 씨드의 사양대로 임시 생성(degraded). 임시 생성한 파일은 `# agentis-kit: improvised` 헤더를 박는다.
 - (선택) 로그 항목 본문에 `tokens: N` / `sec: T` 메타를 한 줄 적어두면 능력치가 더 정확해진다.
 
 <!-- @section: 3-7 -->
@@ -443,7 +448,7 @@ python agentis/workflows/프로젝트-정리.py
 1. **정리** — 작업 중 생긴 임시 파일, 중복 산출물, 더 이상 쓰지 않는 초안은 삭제하지 말고 정리 후보로 분류한다. 필요하면 `python agentis/workflows/프로젝트-정리.py` 로 보고서를 만든다. 이동이 필요하면 `_archive/` 보관 이동만 하고, 영구 삭제는 사용자 승인 후 별도 처리한다.
 2. **검증** — 만든 코드/문서/데이터에 맞는 최소 검증을 실제로 실행한다. 예: `python -m py_compile`, 스크립트 샘플 실행, 카운트 대조, `git diff --check`, 생성 HTML 존재 확인. 검증하지 못했으면 "미검증"이라고 보고하고 이유를 적는다.
 3. **기억** — `memory/log.md`, `hot.md`, `_index.md`, 관련 concept/entity/source, 필요 시 `overview.md`/`policies.md` 를 갱신한다. Hermes의 기억관리처럼 오래 남을 지식과 일시 진행상황을 구분한다.
-4. **시각화** — 기억/log/주요 업무가 바뀌면 `build_graph.py`, `build_flow.py`, `agent-stats.py` 를 돌려 `graph.html`, `flow.html`, `stats.md` 를 갱신한다. 실패하면 실패 로그를 보고한다.
+4. **시각화** — 기억/log/주요 업무/확정 workflow가 바뀌면 `python agentis/graph/refresh_views.py --workspace .` 를 돌려 루트 `workflows.html`, 루트 `holonomic-brain.html`, 기존 `agentis/graph/graph.html`, `agentis/graph/flow.html` 을 갱신한다. 실패하면 실패 로그를 보고한다.
 5. **Git 관리** — Git 저장소라면 `git status` 를 확인하고, 사용자가 요청한 변경은 커밋/푸시까지 수행한다. 씨드 또는 키트가 바뀐 경우 `.clinerules/agentis.md`, `seed/agentis.md`, `docs/agentis-view.html`, `.kit-version`, README/CHANGELOG성 문서를 한 세트로 맞춘다.
 6. **사용자 보고** — 마지막 메시지에는 반드시 `완료`, `변경 파일`, `검증`, `정리/보관`, `두뇌/flow 업데이트`, `GitHub/사내깃 상태`, `사용자에게 필요한 일` 을 짧게 포함한다.
 
@@ -452,15 +457,21 @@ OMC/OMX/OMO식 검증 루프를 본떠, "계획→실행→관찰→검증→정
 ---
 
 <!-- @section: 4 -->
-## 4. 그래프 ("쌓이는 게 보인다") — v1.4 부터 3D
+## 4. 그래프와 사람용 루트 보기 ("쌓이는 게 보인다")
 
-`agentis/memory/` 의 마크다운들(특히 `[[링크]]`)을 노드/엣지로 만들어 Obsidian 그래프 뷰처럼 보여준다. **v1.4 부터는 3D**. v1.6부터는 `flow.html` 로 주요 업무 스윔레인도 함께 본다.
+`agentis/memory/` 의 마크다운들(특히 `[[링크]]`)과 `.clinerules/workflows/` 의 확정 업무 절차를 사람이 바로 볼 수 있게 만든다. v1.10부터 기본 관문은 작업 폴더 루트의 `workflows.html` 과 `holonomic-brain.html` 이다.
 
-- **방법 A (기본 — 항상 됨)**: `agentis/graph/build_graph.py` 가 `memory/**/*.md` 를 훑어 `[[..]]` 링크를 추출 → `graph/graph.json` + **`graph/graph.html` (3D, Three.js + 3d-force-graph 인라인)**. 자체완결: 외부 CDN/npm 없이 한 HTML 1.3MB. 사내망/오프라인 OK.
-- **VS Code 안에서 띄우기 (권장)**: 명령 팔레트 `Ctrl+Shift+P` → `Simple Browser: Show` → 파일 경로 또는 `file:///.../graph.html`. 코드 작업과 그래프가 양쪽 탭으로 공존. 또는 `python build_graph.py --open` 으로 외부 브라우저.
-- **방법 B (선택)**: graphify(Python)를 쓸 수 있으면 `memory/` 를 graphify에 먹여 의미관계·커뮤니티 클러스터링까지 받을 수 있다. 설치는 사용자에게 확인. 안 되면 방법 A로.
-- **vendor 가 없을 때**: §0-1 자가점검이 잡는다. 키트에서 `graph/vendor/three.min.js` + `3d-force-graph.min.js` 를 받아오게 안내. degraded 모드에서는 2D 폴백 HTML 을 임시 생성하는 옵션도 있다 (`# agentis-kit: improvised` 헤더).
-- 첫 부팅 직후에도 한 번 만들어 둔다 (노드 몇 개라도). 작을 때부터 자라는 게 보여야 한다.
+- **사람용 업무 지도**: `.clinerules/workflows/*.md` 를 정본으로 `workflows.html` 생성. 확정 workflow가 생기거나 바뀌면 자동 갱신한다.
+- **사람용 두뇌 지도**: `agentis/memory/`, `agentis/skills/`, `agentis/workflows/` 의 노드·링크·깨진 링크·활성 hot 노드를 `holonomic-brain.html` 로 생성한다.
+- **기존 호환 뷰**: `agentis/graph/build_graph.py` 는 `agentis/graph/graph.html` 3D 뷰를, `agentis/graph/build_flow.py` 는 `agentis/graph/flow.html` primary_tasks 스윔레인을 계속 만든다. 기존 사용자가 열던 경로를 깨지 않는다.
+- **권장 명령**:
+  ```
+  python agentis/graph/refresh_views.py --workspace .
+  ```
+  이 명령이 brain index, 기존 graph/flow, 루트 workflows/holonomic-brain 을 한 번에 갱신한다.
+- **VS Code 안에서 띄우기 (권장)**: 명령 팔레트 `Ctrl+Shift+P` → `Simple Browser: Show` → `file:///.../workflows.html` 또는 `file:///.../holonomic-brain.html`.
+- **vendor 가 없을 때**: §0-1 자가점검이 잡는다. 3D vendor가 없어도 루트 `workflows.html`, `holonomic-brain.html` 은 표준 라이브러리만으로 생성되어야 한다.
+- 첫 부팅 직후에도 한 번 만들어 둔다. 작을 때부터 자라는 게 보여야 한다.
 
 ---
 

@@ -1,0 +1,311 @@
+{
+  "active_node": "memory/log",
+  "broken": [
+    [
+      "memory/_brain/holonomic",
+      ".."
+    ],
+    [
+      "memory/_index",
+      "concepts/예시-개념"
+    ],
+    [
+      "memory/_index",
+      "entities/예시-엔티티"
+    ],
+    [
+      "memory/_index",
+      "sources/2026-05-13-예시-자료"
+    ],
+    [
+      "memory/log",
+      ".."
+    ],
+    [
+      "memory/overview",
+      "concepts/..."
+    ],
+    [
+      "memory/overview",
+      "entities/..."
+    ],
+    [
+      "workflows/memory-lint",
+      "X"
+    ],
+    [
+      "workflows/memory-lint",
+      "기준페이지"
+    ],
+    [
+      "workflows/skill-도태",
+      "skills/..."
+    ],
+    [
+      "workflows/skill-도태",
+      "skills/<이름>"
+    ]
+  ],
+  "categories": {
+    "_other": {
+      "color": "#888888",
+      "label": "OTHER"
+    },
+    "concepts": {
+      "color": "#f0b860",
+      "label": "CONCEPTS"
+    },
+    "core": {
+      "color": "#7fd1ff",
+      "label": "CORE"
+    },
+    "entities": {
+      "color": "#9b8cff",
+      "label": "ENTITIES"
+    },
+    "skills": {
+      "color": "#ff8a8a",
+      "label": "SKILLS"
+    },
+    "sources": {
+      "color": "#5fcaa0",
+      "label": "SOURCES"
+    },
+    "workflows": {
+      "color": "#c0c0c0",
+      "label": "WORKFLOWS"
+    }
+  },
+  "edges": [
+    {
+      "source": "memory/_index",
+      "target": "memory/hot"
+    },
+    {
+      "source": "memory/_index",
+      "target": "memory/log"
+    },
+    {
+      "source": "memory/_index",
+      "target": "memory/overview"
+    },
+    {
+      "source": "memory/hot",
+      "target": "memory/log"
+    },
+    {
+      "source": "memory/overview",
+      "target": "memory/hot"
+    },
+    {
+      "source": "workflows/skill-도태",
+      "target": "memory/log"
+    }
+  ],
+  "holonomic_note": "홀로노믹 브레인 — Agentis 식 적용 컨셉 노트 상태 : 컨셉 노트. v1.5 시점에 Agentis 와 imejaim/OffSpace Self Growth Agent/holonomic brain kit/ 를 비교·매핑한 결과를 박아둔 것. 이 노트가 곧 두뇌의 원리표 — 페이지가 어떻게 분산·자기유사적으로 자라는지 설명한다. 원천 레퍼런스: reference/OffSpace Self Growth Agent/holonomic brain kit/ Ko bujang / Oh gwajang / Jem daeri 캐릭터 SVG + SCHEMA.md + operating model.md + project memory.json 템플릿 . 보편 원리: Pribram 의 holonomic brain theory 분산·간섭 패턴으로 기억이 저장됨 , Bohm 의 implicate order 각 부분에 전체가 접혀 있음 . 1 한 페이지 = 두뇌의 한 조각, 동시에 두뇌 전체의 축약 홀로노믹 두뇌의 핵심 원리는 분산 저장 이다. 하…",
+  "layers": [
+    {
+      "count": 4,
+      "id": "core",
+      "label": "Core / 정체성",
+      "nodes": [
+        {
+          "category": "core",
+          "deg": 3,
+          "id": "memory/_index",
+          "label": "메모리 인덱스"
+        },
+        {
+          "category": "core",
+          "deg": 3,
+          "id": "memory/hot",
+          "label": "지금 (작업 캐시)"
+        },
+        {
+          "category": "core",
+          "deg": 3,
+          "id": "memory/log",
+          "label": "로그"
+        },
+        {
+          "category": "core",
+          "deg": 2,
+          "id": "memory/overview",
+          "label": "큰 그림"
+        }
+      ]
+    },
+    {
+      "count": 9,
+      "id": "workflows",
+      "label": "Workflows / 반복절차",
+      "nodes": [
+        {
+          "category": "workflows",
+          "deg": 0,
+          "id": "workflows/00-전체업무순서",
+          "label": "전체업무순서 워크플로우"
+        },
+        {
+          "category": "workflows",
+          "deg": 0,
+          "id": "workflows/memory-lint",
+          "label": "메모리 lint"
+        },
+        {
+          "category": "workflows",
+          "deg": 1,
+          "id": "workflows/skill-도태",
+          "label": "자가 도태 (씨드 §3-7)"
+        },
+        {
+          "category": "workflows",
+          "deg": 0,
+          "id": "workflows/메인-동기화",
+          "label": "메인 동기화"
+        },
+        {
+          "category": "workflows",
+          "deg": 0,
+          "id": "workflows/브랜치-내보내기",
+          "label": "브랜치 내보내기"
+        },
+        {
+          "category": "workflows",
+          "deg": 0,
+          "id": "workflows/브랜치-비교",
+          "label": "브랜치 비교"
+        },
+        {
+          "category": "workflows",
+          "deg": 0,
+          "id": "workflows/씨드-업그레이드",
+          "label": "씨드 업그레이드 (씨드 자체의 공유와 진화)"
+        },
+        {
+          "category": "workflows",
+          "deg": 0,
+          "id": "workflows/팩-병합",
+          "label": "팩 병합 (다른 에이전트의 역량만 가져오기)"
+        },
+        {
+          "category": "workflows",
+          "deg": 0,
+          "id": "workflows/프로젝트-정리",
+          "label": "프로젝트 정리 워크플로우"
+        }
+      ]
+    },
+    {
+      "count": 1,
+      "id": "_other",
+      "label": "Other",
+      "nodes": [
+        {
+          "category": "_other",
+          "deg": 0,
+          "id": "memory/_brain/holonomic",
+          "label": "홀로노믹 브레인 — Agentis 식 적용 (컨셉 노트)"
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "category": "_other",
+      "deg": 0,
+      "id": "memory/_brain/holonomic",
+      "label": "홀로노믹 브레인 — Agentis 식 적용 (컨셉 노트)"
+    },
+    {
+      "category": "core",
+      "deg": 3,
+      "id": "memory/_index",
+      "label": "메모리 인덱스"
+    },
+    {
+      "category": "core",
+      "deg": 3,
+      "id": "memory/hot",
+      "label": "지금 (작업 캐시)"
+    },
+    {
+      "category": "core",
+      "deg": 3,
+      "id": "memory/log",
+      "label": "로그"
+    },
+    {
+      "category": "core",
+      "deg": 2,
+      "id": "memory/overview",
+      "label": "큰 그림"
+    },
+    {
+      "category": "workflows",
+      "deg": 0,
+      "id": "workflows/00-전체업무순서",
+      "label": "전체업무순서 워크플로우"
+    },
+    {
+      "category": "workflows",
+      "deg": 0,
+      "id": "workflows/memory-lint",
+      "label": "메모리 lint"
+    },
+    {
+      "category": "workflows",
+      "deg": 1,
+      "id": "workflows/skill-도태",
+      "label": "자가 도태 (씨드 §3-7)"
+    },
+    {
+      "category": "workflows",
+      "deg": 0,
+      "id": "workflows/메인-동기화",
+      "label": "메인 동기화"
+    },
+    {
+      "category": "workflows",
+      "deg": 0,
+      "id": "workflows/브랜치-내보내기",
+      "label": "브랜치 내보내기"
+    },
+    {
+      "category": "workflows",
+      "deg": 0,
+      "id": "workflows/브랜치-비교",
+      "label": "브랜치 비교"
+    },
+    {
+      "category": "workflows",
+      "deg": 0,
+      "id": "workflows/씨드-업그레이드",
+      "label": "씨드 업그레이드 (씨드 자체의 공유와 진화)"
+    },
+    {
+      "category": "workflows",
+      "deg": 0,
+      "id": "workflows/팩-병합",
+      "label": "팩 병합 (다른 에이전트의 역량만 가져오기)"
+    },
+    {
+      "category": "workflows",
+      "deg": 0,
+      "id": "workflows/프로젝트-정리",
+      "label": "프로젝트 정리 워크플로우"
+    }
+  ],
+  "root": "/Users/offspace/works/03_Work/cline2agent/kit/agentis-template",
+  "stats": {
+    "broken_links": 14,
+    "by_category": {
+      "_other": 1,
+      "core": 4,
+      "workflows": 9
+    },
+    "edges": 6,
+    "nodes": 14,
+    "orphans": 9
+  }
+}

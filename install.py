@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-agentis-installer v1.9.1 — Agentis 결정론 설치기
+agentis-installer v1.10 — Agentis 결정론 설치기
 
 사내 동료 설치 안내:
   python install.py --target <내 작업 폴더 절대 경로>
@@ -58,6 +58,9 @@ PROTECTED_KIT_FILES = {
     "graph/flow.html",
     "graph/graph.html",
     "graph/graph.json",
+    "workflows.html",
+    "holonomic-brain.html",
+    "holonomic-brain.json",
     "memory/log.md",
     "memory/hot.md",
     "memory/overview.md",
@@ -108,7 +111,11 @@ def _human_size(num_bytes: int) -> str:
 
 
 def _count_files(root: Path) -> int:
-    return sum(1 for p in root.rglob("*") if p.is_file())
+    return sum(
+        1
+        for p in root.rglob("*")
+        if p.is_file() and "__pycache__" not in p.parts and p.suffix not in {".pyc", ".pyo"}
+    )
 
 
 def _timestamp() -> str:
@@ -379,6 +386,8 @@ def safe_upgrade_kit(kit_src: Path, kit_dst: Path, dry_run: bool = False) -> dic
 
     for src in sorted(p for p in kit_src.rglob("*") if p.is_file()):
         rel = src.relative_to(kit_src)
+        if "__pycache__" in rel.parts or src.suffix in {".pyc", ".pyo"}:
+            continue
         dst = kit_dst / rel
         if not dst.exists():
             _copy_file(src, dst, dry_run)
@@ -430,19 +439,21 @@ def verify_installation(
     kit_src: Path | None,
     kit_dst: Path | None,
     kit_skipped: bool,
+    seed_skipped: bool = False,
 ) -> None:
     if not target_seed.is_file():
         _err(f"❌ 검증 실패: {target_seed} 가 만들어지지 않았습니다.")
         sys.exit(EXIT_VERIFY_FAILED)
-    src_hash = _sha256(seed_src)
-    dst_hash = _sha256(target_seed)
-    if src_hash != dst_hash:
-        _err(
-            "❌ 검증 실패: 복사된 씨드의 sha256 이 원본과 다릅니다.\n"
-            f"   원본: {src_hash}\n"
-            f"   복사: {dst_hash}"
-        )
-        sys.exit(EXIT_VERIFY_FAILED)
+    if not seed_skipped:
+        src_hash = _sha256(seed_src)
+        dst_hash = _sha256(target_seed)
+        if src_hash != dst_hash:
+            _err(
+                "❌ 검증 실패: 복사된 씨드의 sha256 이 원본과 다릅니다.\n"
+                f"   원본: {src_hash}\n"
+                f"   복사: {dst_hash}"
+            )
+            sys.exit(EXIT_VERIFY_FAILED)
     if kit_src is not None and kit_dst is not None and not kit_skipped:
         if not kit_dst.is_dir():
             _err(f"❌ 검증 실패: 키트 폴더 {kit_dst} 가 만들어지지 않았습니다.")
@@ -474,10 +485,12 @@ def print_success(
     rule_workflow_stats: dict | None,
     backup: Path | None,
     dry_run: bool,
+    seed_skipped: bool = False,
 ) -> None:
     title = "🔎 Dry-run 결과 (실제로는 아무것도 만들어지지 않았습니다)" if dry_run else "✅ Agentis 설치 완료"
-    seed_size = seed_src.stat().st_size
-    seed_line = f"   ├── .clinerules/agentis.md ({_human_size(seed_size)})"
+    seed_size = target_seed.stat().st_size if target_seed.exists() else seed_src.stat().st_size
+    seed_suffix = "보존" if seed_skipped else _human_size(seed_size)
+    seed_line = f"   ├── .clinerules/agentis.md ({seed_suffix})"
     routing_line = "   ├── .clinerules/10-agent-routing.md (natural language → workflow router)"
     workflow_line = "   ├── .clinerules/workflows/ (Cline-visible workflow rules)"
     kit_line = ""
@@ -490,7 +503,8 @@ def print_success(
         else:
             kit_line = f"   └── agentis/ ({kit_file_count} 파일)"
     else:
-        seed_line = f"   ├── .clinerules/agentis.md ({_human_size(seed_size)})"
+        seed_suffix = "보존" if seed_skipped else _human_size(seed_size)
+        seed_line = f"   ├── .clinerules/agentis.md ({seed_suffix})"
 
     lines = [
         "",
@@ -518,7 +532,8 @@ def print_success(
             "",
             "🛡️  키트 안전 병합 결과:",
             f"   추가 {s.get('added', 0)} / kit-owned 갱신 {s.get('updated', 0)} / 동일 {s.get('same', 0)} / 보호보존 {s.get('protected_kept', 0)} / incoming 보관 {s.get('incoming_saved', 0)}",
-            "   보호 대상: agent.md, memory/, skills/, graph/flow.html, graph/graph.html, graph/graph.json 등",
+            "   보호 대상: agent.md, memory/, skills/, graph/flow.html, graph/graph.html, graph/graph.json, workflows.html, holonomic-brain.html 등",
+            "   root 보기 갱신: `python agentis/graph/refresh_views.py --workspace .`",
         ]
     if rule_workflow_stats is not None:
         s = rule_workflow_stats
@@ -553,7 +568,14 @@ def main(argv: list[str] | None = None) -> int:
     target = resolve_target(args)
     seed_src, routing_src, kit_src, rule_workflows_src = check_source(installer_dir, want_kit=args.kit)
     check_target(target)
-    backup = check_existing_seed(target, force=args.force, dry_run=args.dry_run)
+    existing_seed = target / SEED_RELATIVE
+    upgrade_existing = bool(args.upgrade_kit and existing_seed.exists())
+    if upgrade_existing:
+        backup = None
+        target_seed = existing_seed
+    else:
+        backup = check_existing_seed(target, force=args.force, dry_run=args.dry_run)
+        target_seed = install_seed(seed_src, target, dry_run=args.dry_run)
 
     _print(
         f"📦 인스톨러 위치: {installer_dir}\n📁 대상 폴더: {target}",
@@ -561,19 +583,21 @@ def main(argv: list[str] | None = None) -> int:
     )
     if args.dry_run:
         _print("⚙️  --dry-run: 실제 파일은 만들어지지 않습니다.", args=args)
+    if upgrade_existing:
+        _print("🛡️  --upgrade-kit: 기존 .clinerules/agentis.md 는 보존하고 kit만 안전 병합합니다.", args=args)
 
-    target_seed = install_seed(seed_src, target, dry_run=args.dry_run)
+    rules_force = bool(args.force and not upgrade_existing)
     _routing_rule_dst, routing_rule_status = install_routing_rule(
         routing_src,
         target,
         dry_run=args.dry_run,
-        force=args.force,
+        force=rules_force,
     )
     _rule_workflows_dst, rule_workflow_stats = install_rule_workflows(
         rule_workflows_src,
         target,
         dry_run=args.dry_run,
-        force=args.force,
+        force=rules_force,
     )
     kit_dst: Path | None = None
     kit_skipped = False
@@ -590,6 +614,7 @@ def main(argv: list[str] | None = None) -> int:
             kit_src=kit_src,
             kit_dst=kit_dst,
             kit_skipped=kit_skipped,
+            seed_skipped=upgrade_existing,
         )
 
     print_success(
@@ -605,6 +630,7 @@ def main(argv: list[str] | None = None) -> int:
         rule_workflow_stats=rule_workflow_stats,
         backup=backup,
         dry_run=args.dry_run,
+        seed_skipped=upgrade_existing,
     )
     return EXIT_OK
 

@@ -17,6 +17,8 @@ def load_module(name: str, path: Path):
 
 install = load_module("agentis_install", ROOT / "install.py")
 build_flow = load_module("agentis_build_flow", ROOT / "kit" / "agentis-template" / "graph" / "build_flow.py")
+build_workflows = load_module("agentis_build_workflows", ROOT / "kit" / "agentis-template" / "graph" / "build_workflows.py")
+build_holonomic = load_module("agentis_build_holonomic", ROOT / "kit" / "agentis-template" / "graph" / "build_holonomic_brain.py")
 
 
 class AgentisUpgradeSafetyTests(unittest.TestCase):
@@ -110,6 +112,83 @@ class AgentisUpgradeSafetyTests(unittest.TestCase):
             backups = list((kit_dst / ".upgrade-backups").rglob("build_flow.py"))
             self.assertEqual(len(backups), 1)
             self.assertIn("v1.7", backups[0].read_text(encoding="utf-8"))
+
+    def test_upgrade_kit_preserves_existing_seed_and_clinerules_workflows(self):
+        with tempfile.TemporaryDirectory() as td:
+            target = Path(td) / "project"
+            target.mkdir()
+            (target / ".clinerules" / "workflows").mkdir(parents=True)
+            (target / ".clinerules" / "agentis.md").write_text("# USER SEED\ncustom", encoding="utf-8")
+            (target / ".clinerules" / "workflows" / "00-전체업무순서.md").write_text("# USER FLOW\ncustom", encoding="utf-8")
+            (target / "agentis" / "graph").mkdir(parents=True)
+            (target / "agentis" / "graph" / "build_flow.py").write_text("# agentis-kit: old\nOLD", encoding="utf-8")
+
+            rc = install.main(["--target", str(target), "--upgrade-kit", "--quiet"])
+
+            self.assertEqual(rc, install.EXIT_OK)
+            self.assertEqual((target / ".clinerules" / "agentis.md").read_text(encoding="utf-8"), "# USER SEED\ncustom")
+            self.assertEqual((target / ".clinerules" / "workflows" / "00-전체업무순서.md").read_text(encoding="utf-8"), "# USER FLOW\ncustom")
+            self.assertIn("agentis-kit:", (target / "agentis" / "graph" / "build_flow.py").read_text(encoding="utf-8"))
+
+    def test_safe_kit_upgrade_skips_pycache_and_generated_root_views(self):
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            kit_src = base / "kit-src"
+            kit_dst = base / "project" / "agentis"
+            (kit_src / "graph" / "__pycache__").mkdir(parents=True)
+            (kit_src / "graph" / "__pycache__" / "x.pyc").write_bytes(b"compiled")
+            (kit_src / "workflows.html").write_text("TEMPLATE", encoding="utf-8")
+            kit_dst.mkdir(parents=True)
+            (kit_dst / "workflows.html").write_text("USER VIEW", encoding="utf-8")
+
+            stats = install.safe_upgrade_kit(kit_src, kit_dst, dry_run=False)
+
+            self.assertFalse((kit_dst / "graph" / "__pycache__" / "x.pyc").exists())
+            self.assertEqual((kit_dst / "workflows.html").read_text(encoding="utf-8"), "USER VIEW")
+            self.assertGreaterEqual(stats["protected_kept"], 1)
+
+
+class AgentisRootViewTests(unittest.TestCase):
+    def test_build_workflows_reads_clinerules_workflows(self):
+        with tempfile.TemporaryDirectory() as td:
+            workspace = Path(td)
+            wf = workspace / ".clinerules" / "workflows"
+            wf.mkdir(parents=True)
+            (wf / "00-전체업무순서.md").write_text("# 전체 업무 순서\n\n- [ ] 확인\n```bash\npython agentis/graph/refresh_views.py --workspace .\n```\n", encoding="utf-8")
+            (wf / "보고.md").write_text("# 보고\n\n## 절차\n- 초안\n- 검증\n", encoding="utf-8")
+            (wf / "_template.md").write_text("# ignored", encoding="utf-8")
+            (workspace / "agentis" / "workflows").mkdir(parents=True)
+            (workspace / "agentis" / "workflows" / "보고.py").write_text("print('ok')", encoding="utf-8")
+
+            data = build_workflows.collect(workspace)
+            out = workspace / "workflows.html"
+            build_workflows.atomic_write(out, build_workflows.render(data))
+            text = out.read_text(encoding="utf-8")
+
+            self.assertEqual([x["title"] for x in data["items"]], ["전체 업무 순서", "보고"])
+            self.assertTrue(data["items"][1]["has_script"])
+            self.assertIn("const DATA =", text)
+            self.assertIn("전체 업무 순서", text)
+
+    def test_build_holonomic_brain_writes_root_html_and_json(self):
+        with tempfile.TemporaryDirectory() as td:
+            workspace = Path(td)
+            root = workspace / "agentis"
+            (root / "memory" / "concepts").mkdir(parents=True)
+            (root / "memory" / "_brain").mkdir(parents=True)
+            (root / "agent.md").write_text("# 라대리\n\n[[memory/concepts/업무]]\n", encoding="utf-8")
+            (root / "memory" / "hot.md").write_text("[[memory/concepts/업무]]\n", encoding="utf-8")
+            (root / "memory" / "concepts" / "업무.md").write_text("# 업무\n", encoding="utf-8")
+            (root / "memory" / "_brain" / "holonomic.md").write_text("# Holonomic\n부분이 전체를 담는다.", encoding="utf-8")
+
+            rc = build_holonomic.main(["--root", str(root), "--workspace", str(workspace)])
+
+            self.assertEqual(rc, 0)
+            html = (workspace / "holonomic-brain.html").read_text(encoding="utf-8")
+            js = (workspace / "holonomic-brain.json").read_text(encoding="utf-8")
+            self.assertIn("Holonomic Brain", html)
+            self.assertIn("const DATA =", html)
+            self.assertIn("memory/concepts/업무", js)
 
 
 class AgentisFlowGuideTests(unittest.TestCase):
