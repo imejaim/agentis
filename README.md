@@ -54,6 +54,8 @@ agentis/graph/flow.html            # 기존 primary_tasks 스윔레인 유지
 python agentis/graph/refresh_views.py --workspace .
 ```
 
+`install.py`는 기본 설치/업그레이드가 끝나면 위 명령을 자동으로 한 번 실행합니다. `--no-refresh`를 붙인 경우에만 건너뜁니다.
+
 `workflows.html`의 정본 입력은 `.clinerules/workflows/` 입니다. 확정 업무가 추가되거나 바뀌면 markdown을 고친 뒤 위 refresh 명령으로 HTML을 다시 만듭니다. 생성 HTML은 편집 정본이 아니므로, 기존 사용자의 기억·스킬·씨드를 지우지 않습니다.
 
 ## 잠깐 — 만들지 마세요
@@ -116,6 +118,7 @@ python install.py --target "C:\내작업\프로젝트A"
 - `--dry-run` : 변경 없이 무엇이 만들어질지 보고만
 - `--force` : 이미 설치되어 있으면 백업 후 룰 파일 덮어쓰기 (`agentis/` 생성물은 기본 보존)
 - `--upgrade-kit` : 기존 `agentis/` 에 새 키트를 **안전 병합**. 기존 `.clinerules/agentis.md` 와 `.clinerules/workflows/` 사용자 수정본은 보존하고, `memory/`, `skills/`, `agent.md`, `graph/graph.html`, `graph/flow.html`, `graph/graph.json`, `workflows.html`, `holonomic-brain.html` 은 덮어쓰지 않습니다. `# agentis-kit:` 마커가 있는 표준 스크립트만 백업 후 갱신합니다.
+- `--no-refresh` : 설치 후 루트 `workflows.html` / `holonomic-brain.html` 자동 생성을 건너뜁니다.
 - `--no-kit` : 룰만 설치, 키트는 건너뜀
 - `--quiet` : 출력 최소화
 

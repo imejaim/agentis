@@ -12,9 +12,10 @@ agentis-installer v1.10 — Agentis 결정론 설치기
   1) <target>/.clinerules/agentis.md 복사
   2) <target>/.clinerules/10-agent-routing.md 에 자연어→workflow 라우팅 룰 복사
   3) <target>/.clinerules/workflows/ 에 Cline 하네스가 직접 읽는 표준 워크플로우 룰 복사
-  4) (--kit, 기본 ON) <target>/agentis/ 에 키트 복사
+  4) (--kit, 기본 ON) <target>/agentis/ 에 키트 복사/안전 병합
+  5) (--kit, 기본 ON) <target>/workflows.html + holonomic-brain.html 생성
 
-추가 작업(git push, 네트워크 요청, agentis/ 내부 파일 자동 편집 등) 은 하지 않습니다.
+추가 작업(git push, 네트워크 요청, 사용자 기억 원본 자동 편집 등) 은 하지 않습니다.
 """
 
 from __future__ import annotations
@@ -24,6 +25,7 @@ import datetime as _dt
 import hashlib
 import os
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -179,6 +181,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--upgrade-kit",
         action="store_true",
         help="기존 agentis/ 가 있으면 표준 키트를 안전 병합합니다. memory/·graph.html·flow.html 은 보존하고, kit-owned 스크립트만 백업 후 갱신합니다.",
+    )
+    p.add_argument(
+        "--no-refresh",
+        action="store_true",
+        help="설치 후 root workflows.html/holonomic-brain.html 자동 생성을 건너뜁니다.",
     )
     p.add_argument(
         "--quiet",
@@ -468,6 +475,31 @@ def verify_installation(
             sys.exit(EXIT_VERIFY_FAILED)
 
 
+def refresh_root_views(target: Path, dry_run: bool, quiet: bool) -> dict:
+    """설치 직후 사람이 보는 root HTML을 생성한다. 원본 memory/workflows는 수정하지 않는다."""
+    if dry_run:
+        return {"status": "dry-run"}
+    script = target / "agentis" / "graph" / "refresh_views.py"
+    if not script.is_file():
+        return {"status": "missing", "script": str(script)}
+    cmd = [sys.executable or "python3", str(script), "--workspace", str(target)]
+    proc = subprocess.run(cmd, text=True, capture_output=True)
+    if not quiet:
+        if proc.stdout:
+            print(proc.stdout.rstrip())
+        if proc.stderr:
+            print(proc.stderr.rstrip(), file=sys.stderr)
+    outputs = [target / "workflows.html", target / "holonomic-brain.html", target / "holonomic-brain.json"]
+    if proc.returncode == 0 and all(p.is_file() for p in outputs):
+        return {"status": "ok", "files": [str(p) for p in outputs]}
+    return {
+        "status": "failed",
+        "code": proc.returncode,
+        "stdout": proc.stdout[-1000:],
+        "stderr": proc.stderr[-1000:],
+    }
+
+
 # ---------------------------------------------------------------------------
 # 출력
 # ---------------------------------------------------------------------------
@@ -483,6 +515,7 @@ def print_success(
     kit_upgrade_stats: dict | None,
     routing_rule_status: str | None,
     rule_workflow_stats: dict | None,
+    refresh_stats: dict | None,
     backup: Path | None,
     dry_run: bool,
     seed_skipped: bool = False,
@@ -543,6 +576,24 @@ def print_success(
             f"   라우터 {routing_rule_status or 'unknown'} / workflow 추가 {s.get('added', 0)} / 갱신 {s.get('updated', 0)} / 보존 {s.get('kept', 0)} / 백업 {s.get('backed_up', 0)}",
             "   경로: .clinerules/10-agent-routing.md + .clinerules/workflows/",
         ]
+    if refresh_stats is not None:
+        status = refresh_stats.get("status")
+        if status == "ok":
+            lines += [
+                "",
+                "🧭 root 보기 생성 완료:",
+                "   workflows.html / holonomic-brain.html / holonomic-brain.json",
+            ]
+        elif status == "dry-run":
+            lines += ["", "🧭 root 보기: dry-run 이라 생성하지 않음"]
+        elif status == "missing":
+            lines += ["", f"⚠️  root 보기 생성 건너뜀: {refresh_stats.get('script')} 없음"]
+        else:
+            lines += [
+                "",
+                f"⚠️  root 보기 생성 실패(code={refresh_stats.get('code', 'unknown')}).",
+                "   수동 실행: python agentis/graph/refresh_views.py --workspace .",
+            ]
     lines += [
         "",
         "🎯 다음 단계:",
@@ -617,6 +668,10 @@ def main(argv: list[str] | None = None) -> int:
             seed_skipped=upgrade_existing,
         )
 
+    refresh_stats: dict | None = None
+    if kit_src is not None and not kit_skipped and not args.no_refresh:
+        refresh_stats = refresh_root_views(target, dry_run=args.dry_run, quiet=args.quiet)
+
     print_success(
         args=args,
         target=target,
@@ -628,6 +683,7 @@ def main(argv: list[str] | None = None) -> int:
         kit_upgrade_stats=kit_upgrade_stats,
         routing_rule_status=routing_rule_status,
         rule_workflow_stats=rule_workflow_stats,
+        refresh_stats=refresh_stats,
         backup=backup,
         dry_run=args.dry_run,
         seed_skipped=upgrade_existing,

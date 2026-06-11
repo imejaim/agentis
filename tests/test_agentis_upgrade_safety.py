@@ -129,6 +129,23 @@ class AgentisUpgradeSafetyTests(unittest.TestCase):
             self.assertEqual((target / ".clinerules" / "agentis.md").read_text(encoding="utf-8"), "# USER SEED\ncustom")
             self.assertEqual((target / ".clinerules" / "workflows" / "00-전체업무순서.md").read_text(encoding="utf-8"), "# USER FLOW\ncustom")
             self.assertIn("agentis-kit:", (target / "agentis" / "graph" / "build_flow.py").read_text(encoding="utf-8"))
+            self.assertTrue((target / "workflows.html").is_file())
+            self.assertTrue((target / "holonomic-brain.html").is_file())
+
+    def test_fresh_install_generates_root_views(self):
+        with tempfile.TemporaryDirectory() as td:
+            target = Path(td) / "project"
+            target.mkdir()
+
+            rc = install.main(["--target", str(target), "--quiet"])
+
+            self.assertEqual(rc, install.EXIT_OK)
+            self.assertTrue((target / ".clinerules" / "agentis.md").is_file())
+            self.assertTrue((target / ".clinerules" / "workflows" / "00-전체업무순서.md").is_file())
+            self.assertTrue((target / "workflows.html").is_file())
+            self.assertTrue((target / "holonomic-brain.html").is_file())
+            self.assertTrue((target / "holonomic-brain.json").is_file())
+            self.assertIn("const DATA =", (target / "workflows.html").read_text(encoding="utf-8"))
 
     def test_safe_kit_upgrade_skips_pycache_and_generated_root_views(self):
         with tempfile.TemporaryDirectory() as td:
